@@ -13,6 +13,11 @@ class Chat:
 
     @commands.command(hidden= True)
     async def say(self, *text):     # !say text
+        """Command that echos what you say.
+
+        Keyword arguments:
+        *text -- Text to echo
+        """
         await self.bot.say(" ".join(text))
 
 def setup(bot):

@@ -69,6 +69,11 @@ async def _cog(ctx):
 @_cog.command(name="load")
 @checks.is_owner()
 async def load(cog : str):
+    """Loads a cog.
+
+    Keyword arguments:
+    cog -- Name of the cog
+    """
     cog = cog if isCog(cog) else "cogs." + cog
     if not cog in list_cogs():
         await bot.say("The cog '{}' could not be found.".format(cog))
@@ -79,6 +84,11 @@ async def load(cog : str):
 @_cog.command(name='unload')
 @checks.is_owner()
 async def unload(cog : str):
+    """Unloads a cog.
+
+    Keyword arguments:
+    cog -- Name of the cog
+    """
     cog = cog if isCog(cog) else "cogs." + cog
     bot.unload_extension(cog)
     print('Unloaded {}'.format(cog))
@@ -87,6 +97,11 @@ async def unload(cog : str):
 @_cog.command(name='reload')
 @checks.is_owner()
 async def reload(cog : str):
+    """Reloads a cog.
+
+    Keyword arguments:
+    cog -- Name of the cog
+    """
     cog = cog if isCog(cog) else "cogs." + cog
     if not cog in list_cogs():
         await bot.say("The cog '{}' could not be found.".format(cog))
@@ -98,6 +113,7 @@ async def reload(cog : str):
 @_cog.command(name='list')
 @checks.is_owner()
 async def list():
+    """Lists all cogs"""
     await bot.say("Loaded cogs are: " + ", ".join(list_cogs()))
     print("Loaded cogs are: " + ", ".join(list_cogs()))
 
