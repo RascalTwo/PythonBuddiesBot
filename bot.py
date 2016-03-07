@@ -56,8 +56,8 @@ async def on_command(command, ctx):
     else:
         destination = '#{0.channel.name} ({0.server.name})'.format(message)
 
-def isCog(cog : str) -> bool:
-    return cog.startswith('cogs.')
+def verifyCogName(cog : str) -> str:
+    return 'cogs.' + cog if not cog.startswith('cogs.') else cog
 
 @bot.group(name="cog", pass_context=True)
 @checks.is_owner()
@@ -74,7 +74,7 @@ async def load(cog : str):
     Keyword arguments:
     cog -- Name of the cog
     """
-    cog = cog if isCog(cog) else "cogs." + cog
+    cog = verifyCogName(cog)
     if not cog in list_cogs():
         await bot.say("The cog '{}' could not be found.".format(cog))
         return
@@ -89,7 +89,7 @@ async def unload(cog : str):
     Keyword arguments:
     cog -- Name of the cog
     """
-    cog = cog if isCog(cog) else "cogs." + cog
+    cog = verifyCogName(cog)
     bot.unload_extension(cog)
     print('Unloaded {}'.format(cog))
     await bot.say("Unloaded: {}".format(cog))
@@ -102,7 +102,7 @@ async def reload(cog : str):
     Keyword arguments:
     cog -- Name of the cog
     """
-    cog = cog if isCog(cog) else "cogs." + cog
+    cog = verifyCogName(cog)
     if not cog in list_cogs():
         await bot.say("The cog '{}' could not be found.".format(cog))
         return
