@@ -5,7 +5,7 @@ from discord.ext import commands
 from cogs.utils import checks
 
 #description showed when you use the help command
-description = "test"
+description = 'test'
 
 #sets up the bots characteristics. 
 #command_prefix is the character used before commands
@@ -14,8 +14,7 @@ bot = commands.Bot(command_prefix=commands.when_mentioned_or('$'), description=d
                    
 #a quick thing i made to look in a cogs folder and save all extensions in the list
 def list_cogs():
-    return ["cogs." + i.replace("/", "\\").split("\\")[0].replace(".py", "")
-        for i in os.listdir("cogs") if i.endswith(".py")]
+    return ["cogs." + i.replace("/", "\\").split("\\")[0][:-3] for i in os.listdir("cogs") if i.endswith(".py")]
 
 def load_cog(cog):
     try:
@@ -39,7 +38,7 @@ async def on_ready():
 
     #this can load the cogs/extensions
     for cog in list_cogs():
-        load_cog(extension)
+        load_cog(cog)
 
 @bot.event
 #whenever someone puts a message
@@ -57,40 +56,49 @@ async def on_command(command, ctx):
     else:
         destination = '#{0.channel.name} ({0.server.name})'.format(message)
 
+def isCog(cog : str) -> bool:
+    return cog.startswith('cogs.')
 
+@bot.group(name="cog", pass_context=True)
+@checks.is_owner()
+async def _cog(ctx):
+    """Command to work with cogs."""
+    if ctx.invoked_subcommand is None:
+        await bot.pm_help(ctx)
 
-@bot.command(hidden=True)
+@_cog.command(name="load")
 @checks.is_owner()
 async def load(cog : str):
-    if "cogs." not in cog:
-        cog = "cogs." + cog
+    cog = cog if isCog(cog) else "cogs." + cog
     if not cog in list_cogs():
         await bot.say("The cog '{}' could not be found.".format(cog))
         return
     load_cog(cog)
     await bot.say("Loaded: {}".format(cog))
 
-@bot.command(hidden=True)
+@_cog.command(name='unload')
 @checks.is_owner()
 async def unload(cog : str):
-    if "cogs." not in cog:
-        cog = "cogs." + cog
-    if not cog in list_cogs():
-        await bot.say("The cog '{}' could not be found.".format(cog))
-        return
+    cog = cog if isCog(cog) else "cogs." + cog
     bot.unload_extension(cog)
+    print('Unloaded {}'.format(cog))
     await bot.say("Unloaded: {}".format(cog))
 
-@bot.command(hidden=True)
+@_cog.command(name='reload')
 @checks.is_owner()
 async def reload(cog : str):
-    if "cogs." not in cog:
-        cog = "cogs." + cog
+    cog = cog if isCog(cog) else "cogs." + cog
     if not cog in list_cogs():
         await bot.say("The cog '{}' could not be found.".format(cog))
         return
     bot.unload_extension(cog)
     load_cog(cog)
     await bot.say("Reloaded: {}".format(cog))
+
+@_cog.command(name='list')
+@checks.is_owner()
+async def list():
+    await bot.say("Loaded cogs are: " + ", ".join(list_cogs()))
+    print("Loaded cogs are: " + ", ".join(list_cogs()))
 
 bot.run(email, password)
