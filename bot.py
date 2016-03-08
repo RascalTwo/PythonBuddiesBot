@@ -63,7 +63,7 @@ async def on_message(message):
 
 # this runs when someone runs a command
 @bot.event
-async def on_command(command, ctx):
+async def on_command(_, ctx):
     message = ctx.message
     print('{0.author.name} {0.author.id} {0.channel.server.name} {0.channel.name} {0.clean_content}'.format(message))
 
@@ -135,30 +135,21 @@ async def list_cogs_cmd():
     print('Loaded cogs are: ' + ', '.join(list_cogs()))
 
 
-@bot.event
-#this is the talk function, the bot returns pre determined replies for now
-async def on_message(message):
-    
-    if message.author == bot.user:
-        return
+# this is the talk function, the bot returns pre determined replies for now
+@bot.command(name='talk')
+async def talk(*message):
+    msg = " ".join(message)
 
-    if message.content.startswith('$talk'):
-       msg = message.content
-       if msg.startswith('$talk'):
-           msg = msg[5:]   
-           print(msg)
+    if msg == 'What\'s up?':
+        reply = 'Nothing much!'
+    elif msg == 'What\'s the meaning of life?':
+        reply = 'Forty two'
+    elif msg == '':
+        reply = 'What do you wanna talk about?'
+    else:
+        reply = 'I can\'t answer that right now'
 
-           if msg == " What's up?":
-               reply = "Nothing much!"
-           elif msg == " What's the meaning of life?":
-               reply = " Forty two"
-           elif msg == " ":
-               reply = " What do you wanna talk about?"
-           else:
-               reply = "I can't answer that right now"
-
-       await bot.send_message(message.channel, reply, tts=True)   
-
+    await bot.say(reply, tts=True)
 
 
 bot.run(config.email, config.password)
