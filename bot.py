@@ -65,10 +65,7 @@ async def on_message(message):
 @bot.event
 async def on_command(command, ctx):
     message = ctx.message
-    if message.channel.is_private:
-        destination = 'Private Message'
-    else:
-        destination = '#{0.channel.name} ({0.server.name})'.format(message)
+    print('{0.author.name} {0.author.id} {0.channel.server.name} {0.channel.name} {0.clean_content}'.format(message))
 
 
 def verify_cog_name(cog: str) -> str:
