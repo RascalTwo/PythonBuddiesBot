@@ -1,5 +1,7 @@
 import discord
+import json
 import os
+import sys
 
 from discord.ext import commands
 from cogs.utils import checks
@@ -15,8 +17,12 @@ bot = commands.Bot(command_prefix=commands.when_mentioned_or('$'),
                    pm_help=None,
                    help_attrs=help_attrs)
 
+settings = None
 
-# a quick thing i made to look in a cogs folder and save all extensions in the list
+# a quick thing i made to look in a cogs folder and save all extensions in
+# the list
+
+
 def list_cogs():
     return ['cogs.' + i.replace('/', '\\').split('\\')[0][:-3] for i in os.listdir('cogs') if i.endswith('.py')]
 
@@ -30,9 +36,28 @@ def load_cog(cog):
             cog, type(e).__name__, e))
 
 
+def load_settings(settings_file="settings.json"):
+    """Loads the settings"""
+    global settings
+    original_settings = {"owner": 123456789,
+                         "password": "password", "email": "email"}
+
+    if settings_file not in os.listdir("."):
+        json.dump(original_settings, open("settings.json", "w"),
+                  indent=4, sort_keys=True)
+        print("Please stop the bot, edit the settings.json file, and start the bot again please :)")
+        input()
+        sys.exit()
+    else:
+        settings = json.load(open(settings_file))
+
+
 @bot.command(name='exit')
+@checks.is_owner()
 async def exit():
+    await bot.say("cya")
     await bot.logout()
+
 
 
 # event for when the bot starts
@@ -48,14 +73,14 @@ async def on_ready():
         load_cog(cog)
 
 
+# runs whenever someone sends a message
 @bot.event
-# whenever someone puts a message
 async def on_message(message):
     await bot.process_commands(message)
 
 
-@bot.event
 # this runs when someone runs a command
+@bot.event
 async def on_command(command, ctx):
 
     message = ctx.message
@@ -132,4 +157,5 @@ async def list():
     await bot.say('Loaded cogs are: ' + ', '.join(list_cogs()))
     print('Loaded cogs are: ' + ', '.join(list_cogs()))
 
-bot.run(email, password)
+load_settings()
+bot.run(settings["email"], settings["password"])
