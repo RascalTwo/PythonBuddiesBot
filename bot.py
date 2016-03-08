@@ -2,6 +2,7 @@ import discord
 import json
 import os
 import sys
+import config
 
 from discord.ext import commands
 from cogs.utils import checks
@@ -17,7 +18,6 @@ bot = commands.Bot(command_prefix=commands.when_mentioned_or('$'),
                    pm_help=None,
                    help_attrs=help_attrs)
 
-settings = None
 
 # a quick thing i made to look in a cogs folder and save all extensions in
 # the list
@@ -35,29 +35,11 @@ def load_cog(cog):
         print('Failed to load cog {0}\n{1}: {2}'.format(
             cog, type(e).__name__, e))
 
-
-def load_settings(settings_file="settings.json"):
-    """Loads the settings"""
-    global settings
-    original_settings = {"owner": 123456789,
-                         "password": "password", "email": "email"}
-
-    if settings_file not in os.listdir("."):
-        json.dump(original_settings, open("settings.json", "w"),
-                  indent=4, sort_keys=True)
-        print("Please stop the bot, edit the settings.json file, and start the bot again please :)")
-        input()
-        sys.exit()
-    else:
-        settings = json.load(open(settings_file))
-
-
 @bot.command(name='exit')
 @checks.is_owner()
 async def exit():
-    await bot.say("cya")
+    await bot.say("Logging out.")
     await bot.logout()
-
 
 
 # event for when the bot starts
@@ -157,5 +139,5 @@ async def list():
     await bot.say('Loaded cogs are: ' + ', '.join(list_cogs()))
     print('Loaded cogs are: ' + ', '.join(list_cogs()))
 
-load_settings()
-bot.run(settings["email"], settings["password"])
+
+bot.run(config.email, config.password)
