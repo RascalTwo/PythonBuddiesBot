@@ -32,6 +32,9 @@ async def get_posts(sr_posts, num):
     return posts
 
 async def get_subreddit_top(session, subreddit, num, category):
-    sr_data = await get_subreddit_json(session, subreddit, category)
-    sr_posts = sr_data['data']['children']
+    try:
+        sr_data = await get_subreddit_json(session, subreddit, category)
+        sr_posts = sr_data['data']['children']
+    except KeyError as e:
+        return ['Posts could not be loaded, are you sure thats a subreddit?']
     return await get_posts(sr_posts, num)

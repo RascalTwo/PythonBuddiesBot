@@ -4,4 +4,3 @@ owner = ''
 email = ''
 # Password for the bot account.
 password = ''
-
