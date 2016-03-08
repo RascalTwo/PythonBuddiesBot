@@ -5,3 +5,8 @@ install:
     - "pip install -r requirements.txt"
     - "pip install pylint"
 script: "pylint bot.py cogs"
+notifications:
+    webhooks:
+        urls: http://raylu.net:8009
+        on_success: change
+        on_failure: always
