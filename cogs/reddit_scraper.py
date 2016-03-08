@@ -1,11 +1,7 @@
-# imports discord and the cog library
-import discord
-import asyncio
 from discord.ext import commands
+
 from .utils import checks, scraper
 
-
-# this is the cog / extension
 class RedditScraper:
 
     def __init__(self, bot: commands.Bot):
@@ -39,6 +35,5 @@ class RedditScraper:
             await self.bot.pm_help(ctx)
 
 
-# for the bot to add the cog. replace template with the classname
 def setup(bot):
     bot.add_cog(RedditScraper(bot))

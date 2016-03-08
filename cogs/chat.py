@@ -1,9 +1,4 @@
-import discord
 from discord.ext import commands
-import datetime
-import time
-import aiohttp
-import asyncio
 
 
 # Chat cog

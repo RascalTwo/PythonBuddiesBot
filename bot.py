@@ -1,10 +1,9 @@
-import discord
-import json
 import os
-import sys
-import config
 
+import discord
 from discord.ext import commands
+
+import config
 from cogs.utils import checks
 
 # description showed when you use the help command
@@ -24,20 +23,21 @@ bot = commands.Bot(command_prefix=commands.when_mentioned_or('$'),
 
 
 def list_cogs():
-    return ['cogs.' + i.replace('/', '\\').split('\\')[0][:-3] for i in os.listdir('cogs') if i.endswith('.py')]
+    return ['cogs.' + i.replace('/', '\\').split('\\')[0][:-3]
+            for i in os.listdir('cogs') if i.endswith('.py')]
 
 
 def load_cog(cog):
     try:
         bot.load_extension(cog)
         print('Loaded {0}'.format(cog))
-    except Exception as e:
+    except (ImportError, discord.ClientException) as e:
         print('Failed to load cog {0}\n{1}: {2}'.format(
             cog, type(e).__name__, e))
 
 @bot.command(name='exit')
 @checks.is_owner()
-async def exit():
+async def exit_cmd():
     await bot.say("Logging out.")
     await bot.logout()
 
@@ -64,9 +64,7 @@ async def on_message(message):
 # this runs when someone runs a command
 @bot.event
 async def on_command(command, ctx):
-
     message = ctx.message
-    destination = None
     if message.channel.is_private:
         destination = 'Private Message'
     else:
@@ -134,7 +132,7 @@ async def reload(cog: str):
 
 @_cog.command(name='list')
 @checks.is_owner()
-async def list():
+async def list_cogs_cmd():
     """Lists all cogs"""
     await bot.say('Loaded cogs are: ' + ', '.join(list_cogs()))
     print('Loaded cogs are: ' + ', '.join(list_cogs()))
