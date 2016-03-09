@@ -7,7 +7,7 @@ class Chat:
 
     def __init__(self, bot):
         self.bot = bot
-    
+
     @commands.command(hidden=True)
     async def say(self, *text):     # !say text
         """Command that echos what you say.
@@ -21,18 +21,19 @@ class Chat:
     async def talk(self, ctx):
 
         """Command that implements the talk to the bot function.
-        It uses ChatterBot, is a machine-learning based 
+        It uses ChatterBot, is a machine-learning based
         conversational dialog engine build in Python which makes
-        it possible to generate responses based on collections of known conversations
-        
-        Dependencies: pip install chatterbot
+        it possible to generate responses based on collections of
+        known conversations
 
-        Keyword arguments:
+        **Dependencies**: pip install chatterbot
+
+        **Keyword arguments**:
         chatbot -- stores chatbot object
         ctx     -- Context reference to get message
-        tts     -- Set to true for text to speed implementation    
-
+        tts     -- Set to true for text to speed implementation
         """
+
         chatbot = ChatBot("Ron Obvious")
         chatbot.train("chatterbot.corpus.english")
         msg = ctx.message.content
@@ -40,10 +41,10 @@ class Chat:
         if msg.startswith('$talk'):
             msg = msg[6:]
             print(msg)
-            reply = chatbot.get_response(msg)          
+            reply = chatbot.get_response(msg)
 
         await self.bot.send_message(ctx.message.channel, reply, tts=True)
-        
+
 
 def setup(bot):
     bot.add_cog(Chat(bot))
