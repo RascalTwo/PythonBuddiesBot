@@ -12,7 +12,7 @@ description = 'test'
 # sets up the bots characteristics.
 # command_prefix is the character used before commands
 help_attrs = dict(hidden=True)
-bot = commands.Bot(command_prefix=commands.when_mentioned_or('$'),
+bot = commands.Bot(command_prefix=['$'],
                    description=description,
                    pm_help=None,
                    help_attrs=help_attrs)
@@ -133,23 +133,5 @@ async def list_cogs_cmd():
     """Lists all cogs"""
     await bot.say('Loaded cogs are: ' + ', '.join(list_cogs()))
     print('Loaded cogs are: ' + ', '.join(list_cogs()))
-
-
-# this is the talk function, the bot returns pre determined replies for now
-@bot.command(name='talk')
-async def talk(*message):
-    msg = " ".join(message)
-
-    if msg == 'What\'s up?':
-        reply = 'Nothing much!'
-    elif msg == 'What\'s the meaning of life?':
-        reply = 'Forty two'
-    elif msg == '':
-        reply = 'What do you wanna talk about?'
-    else:
-        reply = 'I can\'t answer that right now'
-
-    await bot.say(reply, tts=True)
-
 
 bot.run(config.email, config.password)
