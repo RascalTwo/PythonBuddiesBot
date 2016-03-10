@@ -4,3 +4,5 @@ owner = ''
 email = ''
 # Password for the bot account.
 password = ''
+# Prefix for bot commands when the bot is not mentioned explicitly
+prefix = '$'

@@ -12,7 +12,7 @@ description = 'test'
 # sets up the bots characteristics.
 # command_prefix is the character used before commands
 help_attrs = dict(hidden=True)
-bot = commands.Bot(command_prefix=['$'],
+bot = commands.Bot(command_prefix=commands.when_mentioned_or(config.prefix),
                    description=description,
                    pm_help=None,
                    help_attrs=help_attrs)
