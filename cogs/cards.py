@@ -6,83 +6,56 @@ Will contain many card playable card games.
 from discord.ext import commands
 import random
 
-hilo_games = []
+playing_users = {}
 
 
-class Deck:
-    """Contains 52 unique Cards."""
+def generate_deck(jokers=False, value_rules="default"):
+    """Create a new 52-54 Card Deck.
 
-    def __init__(self):
-        """Create, populate, and shuffle a new Deck of Cards."""
-        self.deck = self.generate_deck()
-        random.shuffle(self.deck)
+    Keyword Arguments:
+    jokers -- If two Jokers should be added to the Deck. (default False)
+    value_rules -- Rank-Value Dictionary for each Card generated. (default: incremental) (example {"Ace": 14})
 
-    def draw_cards(self, amount):
-        """Remove card(s) from Deck.
-
-        Keyword arguments:
-        amount -- Number of Cards to remove and return from Deck.
-
-        Returns:
-        list -- Cards removed from Deck.
-
-        """
-        cards = []
-        for _ in range(amount):
-            cards.append(self.deck.pop())
-        return cards
-
-    def get_deck(self):
-        """Get the current Deck of Cards.
-
-        Returns:
-        list -- Cards within the Deck.
-
-        """
-        return self.deck
-
-    @staticmethod
-    def generate_deck():
-        """Create a new Deck."""
-        ranks = ["Ace", "2", "3", "4", "5", "6", "7", "8", "9", "10", "Joker", "Queen", "King"]
-        suits = ["Clubs", "Diamonds", "Hearts", "Spades"]
-        return [Card(rank, suit) for rank in ranks for suit in suits]
+    Returns:
+    list -- List of Cards, each being unique asside from possible Jokers.
+    """
+    ranks = ["Ace", "2", "3", "4", "5", "6", "7", "8", "9", "10", "Jack", "Queen", "King"]
+    suits = ["Clubs", "Diamonds", "Hearts", "Spades"]
+    deck = [Card(rank, suit, value_rules) for rank in ranks for suit in suits]
+    if jokers:
+        deck.extend([Card("Joker", None) for _ in range(2)])
+    return deck
 
 
 class Card:
-    """A playing Card.
+    """A playing Card."""
 
-    Supports the following operators: ==, +, -, <, >.
+    ranks = ["Ace", "2", "3", "4", "5", "6", "7", "8", "9", "10", "Jack", "Queen", "King"]
+    suits = ["Clubs", "Diamonds", "Hearts", "Spades"]
 
-    """
-
-    def __init__(self, rank="random", suit="random"):
+    def __init__(self, rank, suit, value_rules="default"):
         """Create a new Card with the supplied rank and suit.
 
         Keyword Arguments:
-        rank -- Rank of the Card [Ace, 2, 3, 4, 5, 6, 7, 8, 9, 10, Joker, Queen, King] (default random)
-        suit -- Suite of the Card [Clubs, Diamonds, Hearts, Spades] (default random)
+        rank -- Rank of the Card [Ace, 2, 3, 4, 5, 6, 7, 8, 9, 10, Jack, Queen, King]
+        suit -- Suite of the Card [Clubs, Diamonds, Hearts, Spades]
+        value_rules -- Rank-Value Dictionary (default: incremental) (example {"Ace": 14})
 
         """
-        ranks = ["Ace", "2", "3", "4", "5", "6", "7", "8", "9", "10", "Joker", "Queen", "King"]
         if rank == "random":
-            self.rank = random.choice(ranks)
+            self.rank = random.choice(self.ranks)
         else:
             self.rank = rank
 
         if suit == "random":
-            self.suit = random.choice(["Clubs", "Diamonds", "Hearts", "Spades"])
+            self.suit = random.choice(self.suits)
         else:
             self.suit = suit
-        self.value = ranks.index(self.rank) + 1
 
-    def get_rank(self):
-        """Return rank of Card."""
-        return self.rank
-
-    def get_suit(self):
-        """Return suit of Card."""
-        return self.suit
+        if value_rules != "default" and self.rank in value_rules:
+            self.value = value_rules[self.rank]
+        else:
+            self.value = self.ranks.index(self.rank) + 1
 
     def __gt__(self, other):
         """Return true if this card is greater than supplied other card.
@@ -112,30 +85,6 @@ class Card:
         """
         return self.value < other.value
 
-    def __add__(self, other):
-        """Allow Card to be added to another card with the + operator.
-
-        Keyword Arguments:
-        other -- Card to add to this card.
-
-        Returns:
-        int -- Result of adding the two card values.
-
-        """
-        return self.value + other.value
-
-    def __sub__(self, other):
-        """Allow Card to be subtracted from another card with the - operator.
-
-        Keyword Arguments:
-        other -- Card to subtract from this card.
-
-        Returns:
-        int -- Result of subtracting the two card values, may be negative.
-
-        """
-        return self.value - other.value
-
     def __eq__(self, other):
         """Allow Card to be compared to other Card with the == operator.
 
@@ -150,11 +99,13 @@ class Card:
 
     def __str__(self):
         """Return string representation of Card."""
+        if self.suit is None:
+            return self.rank
         return "{} of {}".format(self.rank, self.suit)
 
     def __repr__(self):
         """Return data representation of Card."""
-        return "Card({},{})".format(self.rank, self.suit)
+        return "Card({},{},{})".format(self.rank, self.suit, self.value)
 
 
 class HiLo_Game:
@@ -170,10 +121,10 @@ class HiLo_Game:
         """
         self.user = user
         self.bet_amount = int(bet_amount)
-        self.card_hidden = Card()
-        self.card_visable = Card()
-        while (self.card_hidden == self.card_visable):
-            self.card_hidden = Card()
+        self.card_hidden = Card("random", "random")
+        self.card_visiable = Card("random", "random")
+        while self.card_hidden == self.card_visiable:
+            self.card_hidden = Card("random", "random")
 
     def guess(self, guess):
         """Guess weather the hidden card is higher or lower than the hidden card.
@@ -182,28 +133,12 @@ class HiLo_Game:
         bool -- True if the user was correct, False otherwise.
 
         """
-        if guess == "higher"and self.card_hidden > self.card_visable:
+        if guess.lower() == "higher"and self.card_hidden.value > self.card_visiable.value:
             return True
-        elif guess == "lower" and self.card_hidden < self.card_visable:
+        elif guess.lower() == "lower" and self.card_hidden.value < self.card_visiable.value:
             return True
         else:
             return False
-
-    def get_hidden_card(self):
-        """Return the hidden (face-down) card."""
-        return self.card_hidden
-
-    def get_visable_card(self):
-        """Return the visable (face-up) card."""
-        return self.card_visable
-
-    def get_user(self):
-        """Return the user playing."""
-        return self.user
-
-    def get_bet_amount(self):
-        """Return the amount bet."""
-        return self.bet_amount
 
 
 class Cards:
@@ -224,37 +159,37 @@ class Cards:
         arguments = ctx.message.content.split(" ")
         game_name = arguments[1]
         if game_name.lower() == "hilo":
-            if len(arguments) == 3:
-                if arguments[2].isdecimal():
-                    if True:  # TODO: Replace with economy check.
-                        hilo_game_instance = HiLo_Game(ctx.message.author, arguments[2])
-                        await self.bot.say("So, do you think the face-down card is *higher* or *lower* then the **{}**?".format(hilo_game_instance.get_visable_card()))
-                        hilo_games.append(hilo_game_instance)
-                    else:
-                        await self.bot.say("You don't have ${}!".format(arguments[2]))
-                else:
-                    await self.bot.say("Bet amount needs to be a number.")
-            else:
+            if len(arguments) != 3:
                 await self.bot.say("Correct command: 'game hilo bet_amount'\nExample: 'game hilo 10'")
+                return
+            if not arguments[2].isdecimal():
+                await self.bot.say("Bet amount needs to be a number.")
+                return
+            if False:  # TODO: Replace with not enough money economy check.
+                await self.bot.say("You don't have ${}!".format(arguments[2]))
+                return
+            hilo_game_instance = HiLo_Game(ctx.message.author, arguments[2])
+            await self.bot.say("So, do you think the face-down card is *higher* or *lower* then the **{}**?".format(hilo_game_instance.card_visiable))
+            playing_users[ctx.message.author.id] = hilo_game_instance
 #                   FIX: Above error messages are only placeholders at the moment.
 
     async def receive_message(self, message):
         """Called whenever any player sends a message."""
-        if message.author.id == self.bot.user.id:
+        if message.author.id == self.bot.user.id or message.author.id not in playing_users:
             return
-        hilo_game_instance = [hilo_game for hilo_game in hilo_games if hilo_game.get_user() == message.author]
-        if hilo_game_instance != []:
-            hilo_game_instance = hilo_game_instance[0]
-            if message.content.lower() == "higher" or message.content.lower() == "lower":
-                win = hilo_game_instance.guess(message.content)
-                responce_message = "The **{}** {}{} then the **{}**".format(hilo_game_instance.get_hidden_card(), "is " if win else "is not ", message.content, hilo_game_instance.get_visable_card())
-                # The hidden_card (is/is not) (higher/lower) then the visable_card
-                if win:
-                    responce_message += "\nYou won **${}**!".format(hilo_game_instance.get_bet_amount() * 2)
-                else:
-                    responce_message += "\nYou lost **${}**, Better luck next time!".format(hilo_game_instance.get_bet_amount())
-                await self.bot.send_message(message.channel, responce_message)
-                hilo_games.pop(hilo_games.index(hilo_game_instance))
+        game = playing_users[message.author.id]
+        if isinstance(game, HiLo_Game):
+            if message.content.lower() != "higher" and message.content.lower() != "lower":
+                return
+            win = game.guess(message.content.lower())
+            responce_message = "The **{}** {}{} then the **{}**".format(game.card_hidden, "is " if win else "is not ", message.content, game.card_visiable)
+            # The card_hidden (is/is not) (higher/lower) then the card_visiable.
+            if win:
+                responce_message += "\nYou won **${}**!".format(game.bet_amount * 2)
+            else:
+                responce_message += "\nYou lost **${}**, Better luck next time!".format(game.bet_amount)
+            await self.bot.send_message(message.channel, responce_message)
+            del playing_users[message.author.id]
 
 
 def setup(bot):
