@@ -112,7 +112,7 @@ class HiLo_Game:
         12: "Queen",
         13: "King"
     }
-    responces = {"start": [None],
+    responses = {"start": [None],
                  "guess": ["higher", "lower"],
                  "choose": ["double", "pass"]}
 
@@ -149,10 +149,10 @@ class HiLo_Game:
         """
         if message is not None:
             message.content = message.content.lower()
-            if message.content not in self.responces[self.stage]:
+            if message.content not in self.responses[self.stage]:
                 return
         else:
-            if message not in self.responces[self.stage]:
+            if message not in self.responses[self.stage]:
                 return
 
         if self.stage == "start":
@@ -161,50 +161,49 @@ class HiLo_Game:
                     "`lower` then the **{}**?".format(self.card_visible))
 
         if self.stage == "guess":
-            responce = ""
+            response = ""
             if ((message.content == "higher" and
                  self.card_hidden.value > self.card_visible.value) or
                     (message.content == "lower" and
                      self.card_hidden.value < self.card_visible.value)):
-                responce += ("You Won $**{}**!\nDo you wish to go for "
+                response += ("You Won $**{}**!\nDo you wish to go for "
                              "`double` or nothing, or will you take your"
                              "winnings and `pass`?"
                              .format(self.bet_amount * 2))
                 is_or_is_not = "is"
                 self.stage = "choose"
             else:
-                responce += ("You Lost $**{}**!\nBetter luck next time!"
+                response += ("You Lost $**{}**!\nBetter luck next time!"
                              .format(self.bet_amount))
                 is_or_is_not = "is not"
-#               TODO: Remove self.bet_amount from user account.
+#               Remove self.bet_amount from user account.
                 del playing_users[message.author.id]
-            responce = ("The **{}** {} {} then the **{}**\n"
+            response = ("The **{}** {} {} then the **{}**\n"
                         .format(self.card_hidden,
                                 is_or_is_not,
                                 message.content,
-                                self.card_visible)) + responce
-            return responce
+                                self.card_visible)) + response
+            return response
 
         elif self.stage == "choose":
             if message.content == "double":
-                if True:
-                    self._new_cards()
-                    responce = ("So, do you think the face-down card is "
-                                "`higher` or `lower` then the **{}**?"
-                                .format(self.card_visible))
-#                   TODO: Replace with economy check.
-                    self.bet_amount *= 2
-                    self.stage = "guess"
-                else:
-                    responce = ("You don't have ${} to bet, passing instead\n"
-                                .format(self.bet_amount))
-                    message.content = "pass"
+#               if True:
+                self._new_cards()
+                response = ("So, do you think the face-down card is "
+                            "`higher` or `lower` then the **{}**?"
+                            .format(self.card_visible))
+                self.bet_amount *= 2
+                self.stage = "guess"
+#               else:
+#                   response = ("You don't have ${} to bet, passing instead\n"
+#                               .format(self.bet_amount))
+#                   message.content = "pass"
             if message.content == "pass":
-                responce = ("Thanks for playing!\n$**{}** has been added to "
+                response = ("Thanks for playing!\n$**{}** has been added to "
                             "your account!".format(self.bet_amount * 2))
-#               TODO: Add self.bet_amount * 2 to user account.
+#               Add self.bet_amount * 2 to user account.
                 del playing_users[message.author.id]
-            return responce
+            return response
 
 
 class Cards:
@@ -245,6 +244,8 @@ class Cards:
         Command: game hilo bet_amount
         Example: game hilo 10
 
+        ***Economy Is Not Yet Implemented***
+
         """
         arguments = ctx.message.content.lower().split(" ")
         if len(arguments) != 3:
@@ -254,11 +255,11 @@ class Cards:
         if not arguments[2].isdecimal():
             await self.bot.say("```Bet amount needs to be a number.```")
             return
-        if False:
-            await self.bot.say("```You don't have $**{}**!```"
-                               .format(arguments[2]))
-#           TODO: Replace with economy check.
-            return
+#       if False:
+#           await self.bot.say("```You don't have $**{}**!```"
+#                              .format(arguments[2]))
+#           Replace with economy check.
+#           return
         hilo_game_instance = HiLo_Game(ctx.message.author, arguments[2])
         await self.bot.say(hilo_game_instance.logic())
         playing_users[ctx.message.author.id] = hilo_game_instance
@@ -270,9 +271,9 @@ class Cards:
             return
         game = playing_users[message.author.id]
         if isinstance(game, HiLo_Game):
-            responce = game.logic(message)
-            if responce is not None:
-                await self.bot.send_message(message.channel, responce)
+            response = game.logic(message)
+            if response is not None:
+                await self.bot.send_message(message.channel, response)
 
 
 def setup(bot):
