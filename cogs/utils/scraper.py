@@ -3,8 +3,8 @@ categories = ['hot', 'new', 'controversial', 'rising', 'top']
 async def get_subreddit_json(session, subreddit, category):
     return await get_json(session, 'https://www.reddit.com/r/' + subreddit + '/' + category + '/.json')
 
-async def get_json(session, url):
-    async with session.get(url) as resp:
+async def get_json(session, url, headers=None):
+    async with session.get(url, headers=headers) as resp:
         return await resp.json()
 
 async def get_post_from_json(post_data: dict):
