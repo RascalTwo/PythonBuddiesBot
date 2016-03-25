@@ -1,6 +1,6 @@
 from discord.ext import commands
 
-from .utils import checks, scraper
+from cogs.utils import checks, scraper
 
 class RedditScraper:
 
