@@ -1,40 +1,24 @@
 """Wattpad scraper cog.
 
-Many features to scrap from wattpad.
-
+Many features to scrape from wattpad.
 """
 from discord.ext import commands
-from cogs.utils import scraper
+from .scraper_utils import GeneralScraper
 
-#API_STORYINFO = 'https://www.wattpad.com/api/v3/stories/'
-#API_HOTSTORYLIST = 'https://www.wattpad.com/api/v3/stories?filter=hot'
+# API_STORYINFO = 'https://www.wattpad.com/api/v3/stories/'
+# API_HOTSTORYLIST = 'https://www.wattpad.com/api/v3/stories?filter=hot'
 API_NEWSTORYLIST = 'https://www.wattpad.com/api/v3/stories?filter=new'
-#API_STORYTEXT = 'https://www.wattpad.com/apiv2/storytext'
-#API_GETCATEGORIES = 'https://www.wattpad.com/apiv2/getcategories'
-#API_CHAPTERINFO = 'https://www.wattpad.com/apiv2/info'
+# API_STORYTEXT = 'https://www.wattpad.com/apiv2/storytext'
+# API_GETCATEGORIES = 'https://www.wattpad.com/apiv2/getcategories'
+# API_CHAPTERINFO = 'https://www.wattpad.com/apiv2/info'
 
 
-async def get_latest_story(session):
-    story_json = (await scraper.get_json(session,
-                                         API_NEWSTORYLIST,
-                                         headers={"User-Agent": "Chrome/41.0.2228.0"}))['stories'][0]
-    story_title = story_json['title']
-    story_description = story_json['description']
-    story_chapter_one_url = story_json['parts'][0]['url']
-
-    return ("**Title:** {}\n"
-            "**Description:** {}\n"
-            "**Link:** {}"
-            .format(story_title,
-                    story_description,
-                    story_chapter_one_url))
-
-
-class WattpadScraper:
+class WattpadScraper(GeneralScraper):
     """Wattpad scraper cog."""
 
     def __init__(self, bot):
         """Initalization function."""
+        super().__init__()
         self.bot = bot
 
     @commands.group(name='wattpad', pass_context=True)
@@ -46,8 +30,23 @@ class WattpadScraper:
     @_wattpad.command()
     async def latest(self):
         """Get the latest story posted to Wattpad."""
-        result = await get_latest_story(self.bot.session)
+        result = await self.get_latest_story()
         await self.bot.say(result)
+
+    async def get_latest_story(self, session=None):
+        story_json = await self.fetch_json(
+            API_NEWSTORYLIST, session=session, headers={"User-Agent": "Chrome/41.0.2228.0"})
+        first_story = story_json['stories'][0]
+        story_title = first_story['title']
+        story_description = first_story['description']
+        story_chapter_one_url = first_story['parts'][0]['url']
+
+        return ("**Title:** {}\n"
+                "**Description:** {}\n"
+                "**Link:** {}"
+                .format(story_title,
+                        story_description,
+                        story_chapter_one_url))
 
 
 def setup(bot):
