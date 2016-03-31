@@ -5,32 +5,89 @@ Will contain many card playable card games.
 """
 import random
 from discord.ext import commands
+from .utils import fileIO
 
 playing_users = {}
 
 
-def generate_deck(value_rules, jokers=0, joker_value=0):
-    """Generate a list of unique cards.
+class Cards:
+    """Card cog."""
 
-    Keyword Arguments:
-    jokers -- Number of Jokers to add to Deck. (default 0)
-    joker_value -- Value for each Joker generated. (default 0)
-    value_rules -- Value(int)-Rank(str) dictionary for each Card generated.
-                   (example {1: "Ace"})
+    def __init__(self, bot):
+        """Initalization function."""
+        self.bot = bot
 
-    Returns:
-    list -- List of Cards, each being unique asside from possible Jokers.
+    @commands.command(pass_context=True)
+    async def balance(self, ctx):
+        """Return the balance of executing user."""
+        await self.bot.say("Current Balance: $**{}**"
+                           .format(Economy.get_user_balance(ctx.message.author.id)))
 
-    """
-    suits = ["Clubs", "Diamonds", "Hearts", "Spades"]
-    deck = [Card(value_rules, value, suit)
-            for value in value_rules for suit in suits]
-    deck.extend([Card({joker_value: "Joker"}, joker_value, "")
-                 for _ in range(jokers)])
-    return deck
+    @commands.group(pass_context=True)
+    async def game(self, ctx):
+        """Base command for playing card games.
+
+        Playable games:
+
+        HiLo - game hilo bet_amount
+
+        """
+        if ctx.invoked_subcommand is None:
+            await self.bot.say("Try one of these games:\n"
+                               "HiLo - game hilo bet_amount")
+
+    @game.command(pass_context=True)
+    async def hilo(self, ctx):
+        """Start a game of HiLo.
+
+        HiLo is a game in which two unique cards are randomly generated. You
+        are then told the value of one of these cards, and must guess if the
+        other value of the other card is either higher, or lower then the value
+        of the first card.
+
+        If you are correct, you win and may either take your money, or go for
+        double or nothing!
+
+        Values from least to greatest:
+            Ace, 2, 3, 4, 5, 6, 7, 8, 9, 10, Jack, Queen, King
+
+        Command: game hilo bet_amount
+        Example: game hilo 10
+
+        """
+        arguments = ctx.message.content.lower().split(" ")
+        if len(arguments) != 3:
+            await self.bot.say("```Command: game hilo bet_amount\n"
+                               "Example: game hilo 10```")
+            return
+        if not arguments[2].isdecimal():
+            await self.bot.say("```Bet amount needs to be a number.```")
+            return
+        if Economy.get_user_balance(ctx.message.author.id) < int(arguments[2]):
+            await self.bot.say("`You don't have $**{}**!`"
+                               .format(arguments[2]))
+            return
+        hilo_game_instance = HiLo_Game(ctx.message.author, arguments[2])
+        Economy.change_user_balance(ctx.message.author.id,
+                                    int(arguments[2]) * -1)
+        await self.bot.say("Current Balance: $**{}**"
+                           .format(Economy.get_user_balance(ctx.message.author.id)))
+        await self.bot.say(hilo_game_instance.logic())
+        playing_users[ctx.message.author.id] = hilo_game_instance
+
+    async def receive_message(self, message):
+        """Called whenever any player sends a message."""
+        if (message.author.id == self.bot.user.id or
+                message.author.id not in playing_users):
+            return
+        game = playing_users[message.author.id]
+        if isinstance(game, HiLo_Game):
+            response = game.logic(message)
+            if response is not None:
+                await self.bot.send_message(message.channel, response)
 
 
-class Card:
+class Card(object):
     """A playing Card."""
 
     suits = ["Clubs", "Diamonds", "Hearts", "Spades"]
@@ -93,9 +150,90 @@ class Card:
         return Card(value_rules, random.choice(list(value_rules.keys())),
                     random.choice(["Clubs", "Diamonds", "Hearts", "Spades"]))
 
+    @staticmethod
+    def generate_deck(value_rules, jokers=0, joker_value=0):
+        """Generate a list of unique cards.
 
-class HiLo_Game:
-    """HiLo Game instance."""
+        Keyword Arguments:
+        jokers -- Number of Jokers to add to Deck. (default 0)
+        joker_value -- Value for each Joker generated. (default 0)
+        value_rules -- Value(int)-Rank(str) dictionary for each Card generated.
+                       (example {1: "Ace"})
+
+        Returns:
+        list -- List of Cards, each being unique asside from possible Jokers.
+
+        """
+        suits = ["Clubs", "Diamonds", "Hearts", "Spades"]
+        deck = [Card(value_rules, value, suit)
+                for value in value_rules for suit in suits]
+        deck.extend([Card({joker_value: "Joker"}, joker_value, "")
+                     for _ in range(jokers)])
+        return deck
+
+
+class Economy(object):
+    """Economy utility class."""
+
+    @staticmethod
+    def get_user_balance(user_id):
+        """Get the balance of a user by the provided user_id.
+
+        Keyword Arguments:
+        user_id -- ID of the user to get the balance of.
+
+        Returns:
+        int -- balance of the provided user_id.
+
+        """
+        data = fileIO.readFile("data/economy.json")
+        if user_id in data:
+            return data[user_id]
+        Economy.set_user_balance(user_id, 100)
+        return 100
+
+    @staticmethod
+    def set_user_balance(user_id, balance):
+        """Set the balance of a user to the provided balance.
+
+        Keyword Arguments:
+        user_id -- ID of the user to set the balance of.
+        balance -- Balance to set the balance of the user to.
+
+        Returns:
+        bool -- True if the setting of the users balance was
+                successful, otherwise False.
+
+        """
+        data = fileIO.readFile("data/economy.json")
+
+        if balance > data["minimum_balance"]:
+            data[user_id] = balance
+        else:
+            data[user_id] = data["minimum_balance"]
+
+        return fileIO.writeFile("data/economy.json", data)
+
+    @staticmethod
+    def change_user_balance(user_id, amount):
+        """Change the balance of a user by the provided balance.
+
+        Keyword Arguments:
+        user_id -- ID of the user to change the balance of.
+        amount -- Amount to change the balance of the user
+                  by - can be a negative number.
+
+        Returns:
+        bool -- True if the changing of the users balance was
+                successful, otherwise False.
+
+        """
+        return Economy.set_user_balance(user_id,
+                                        Economy.get_user_balance(user_id) + amount)
+
+
+class HiLo_Game(object):
+    """HiLo Game."""
 
     value_rules = {
         1: "Ace",
@@ -167,16 +305,17 @@ class HiLo_Game:
                     (message.content == "lower" and
                      self.card_hidden.value < self.card_visible.value)):
                 response += ("You Won $**{}**!\nDo you wish to go for "
-                             "`double` or nothing, or will you take your"
+                             "`double` or nothing, or will you take your "
                              "winnings and `pass`?"
                              .format(self.bet_amount * 2))
                 is_or_is_not = "is"
                 self.stage = "choose"
             else:
-                response += ("You Lost $**{}**!\nBetter luck next time!"
-                             .format(self.bet_amount))
+                response += ("You Lost $**{}**, leaving you with {}!\n"
+                             "Better luck next time!"
+                             .format(self.bet_amount,
+                                     Economy.get_user_balance(self.user.id)))
                 is_or_is_not = "is not"
-#               Remove self.bet_amount from user account.
                 del playing_users[message.author.id]
             response = ("The **{}** {} {} then the **{}**\n"
                         .format(self.card_hidden,
@@ -186,98 +325,34 @@ class HiLo_Game:
             return response
 
         elif self.stage == "choose":
+            response = ""
             if message.content == "double":
-#               if True:
-                self._new_cards()
-                response = ("So, do you think the face-down card is "
-                            "`higher` or `lower` then the **{}**?"
-                            .format(self.card_visible))
-                self.bet_amount *= 2
-                self.stage = "guess"
-#               else:
-#                   response = ("You don't have ${} to bet, passing instead\n"
-#                               .format(self.bet_amount))
-#                   message.content = "pass"
+                if Economy.get_user_balance(self.user.id) >= self.bet_amount * 2:
+                    self._new_cards()
+                    response += ("So, do you think the face-down card is "
+                                 "`higher` or `lower` then the **{}**?"
+                                 .format(self.card_visible))
+                    self.bet_amount *= 2
+                    self.stage = "guess"
+                else:
+                    response += ("You don't have ${} to bet, passing instead\n"
+                                 .format(self.bet_amount * 2))
+                    message.content = "pass"
             if message.content == "pass":
-                response = ("Thanks for playing!\n$**{}** has been added to "
-                            "your account!".format(self.bet_amount * 2))
-#               Add self.bet_amount * 2 to user account.
+                response += ("Thanks for playing!\n$**{}** has been added to "
+                             "your account, bringing your balance to $**{}**!"
+                             .format(self.bet_amount * 2,
+                                     self.bet_amount * 2 + Economy.get_user_balance(self.user.id)))
+                Economy.change_user_balance(self.user.id, self.bet_amount * 2)
                 del playing_users[message.author.id]
             return response
 
 
-class Cards:
-    """Card cog."""
-
-    def __init__(self, bot):
-        """Initalization function."""
-        self.bot = bot
-
-    @commands.group(pass_context=True)
-    async def game(self, ctx):
-        """Base command for playing card games.
-
-        Playable games:
-
-        HiLo - game hilo bet_amount
-
-        """
-        if ctx.invoked_subcommand is None:
-            await self.bot.say("Try one of these games:\n"
-                               "HiLo - game hilo bet_amount")
-
-    @game.command(pass_context=True)
-    async def hilo(self, ctx):
-        """Start a game of HiLo.
-
-        HiLo is a game in which two unique cards are randomly generated. You
-        are then told the value of one of these cards, and must guess if the
-        other value of the other card is either higher, or lower then the value
-        of the first card.
-
-        If you are correct, you win and may either take your money, or go for
-        double or nothing!
-
-        Values from least to greatest:
-            Ace, 2, 3, 4, 5, 6, 7, 8, 9, 10, Jack, Queen, King
-
-        Command: game hilo bet_amount
-        Example: game hilo 10
-
-        ***Economy Is Not Yet Implemented***
-
-        """
-        arguments = ctx.message.content.lower().split(" ")
-        if len(arguments) != 3:
-            await self.bot.say("```Command: game hilo bet_amount\n"
-                               "Example: game hilo 10```")
-            return
-        if not arguments[2].isdecimal():
-            await self.bot.say("```Bet amount needs to be a number.```")
-            return
-#       if False:
-#           await self.bot.say("```You don't have $**{}**!```"
-#                              .format(arguments[2]))
-#           Replace with economy check.
-#           return
-        hilo_game_instance = HiLo_Game(ctx.message.author, arguments[2])
-        await self.bot.say(hilo_game_instance.logic())
-        playing_users[ctx.message.author.id] = hilo_game_instance
-
-    async def receive_message(self, message):
-        """Called whenever any player sends a message."""
-        if (message.author.id == self.bot.user.id or
-                message.author.id not in playing_users):
-            return
-        game = playing_users[message.author.id]
-        if isinstance(game, HiLo_Game):
-            response = game.logic(message)
-            if response is not None:
-                await self.bot.send_message(message.channel, response)
-
-
 def setup(bot):
     """Called when cog is loaded via load_extension()."""
+    if fileIO.readFile("data/economy.json") is False:
+        fileIO.writeFile("data/economy.json", {"minimum_balance": 100})
+
     cards = Cards(bot)
     bot.add_listener(cards.receive_message, "on_message")
     bot.add_cog(cards)
