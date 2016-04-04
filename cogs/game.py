@@ -10,21 +10,27 @@ class Game:
     def __init__(self, bot):
         """Initalization function."""
         self.bot = bot
+        self.temp_output = {}
 
     @commands.command(pass_context=True)
-    async def board(self, ctx):
-        board = await self.bot.say("BOARD")
-        status = await self.bot.say("STATUS")
-        self.board = board
-        self.status = status
+    async def tictactoe(self, ctx):
+        output = await self.bot.say("Enter the message `CONSOLE:`")
+        print(type(ctx.message.author.id))
+        print(ctx.message.author.id)
+        self.temp_output[ctx.message.author.id] = output
 
     async def receive_message(self, message):
         """Called whenever any player sends a message."""
         if message.author.id == self.bot.user.id:
             return
         if message.content == "CONSOLE:":
-            games[message.author.id] = TicTacToe(self.bot, message.id, self.status, self.board)
+            if message.author.id not in self.temp_output:
+                await self.bot.say("You need to start a game before creating your CONSOLE message.")
+                return
+            games[message.author.id] = TicTacToe(self.bot, self.temp_output[message.author.id])
             await games[message.author.id].redraw()
+            del self.temp_output[message.author.id]
+
 
     async def edit_message(self, before, after):
         if after.author.id == self.bot.user.id:
@@ -36,11 +42,9 @@ class Game:
 
 
 class TicTacToe(object):
-    def __init__(self, bot, console_id, status_message, board_message):
+    def __init__(self, bot, output_message):
         self.bot = bot
-        self.console_id = console_id
-        self._status_message = status_message
-        self._board_message = board_message
+        self.output_message = output_message
         self.board = [
                       [" ", " ", " "],
                       [" ", " ", " "],
@@ -49,8 +53,8 @@ class TicTacToe(object):
         self.status_message = "Enter where you want to place your O!"
 
     async def redraw(self):
-        await self.bot.edit_message(self._status_message, self.status_message)
-        await self.bot.edit_message(self._board_message, self.board_string())
+        await self.bot.edit_message(self.output_message,
+                                    self.board_string() + "\n" + self.status_message)
 
     def board_string(self):
         board_string = ("```\n"
@@ -141,6 +145,7 @@ class TicTacToe(object):
                     return False
 
         return True
+
 
 def setup(bot):
     """Called when cog is loaded via load_extension()."""
