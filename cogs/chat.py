@@ -10,19 +10,6 @@ import asyncio
 import json
 import time
 
-def get_time_difference(time_one, time_two):
-    """Get difference in days, hours, and minutes between two times."""
-    diff = time.strftime("%d %H:%M",
-                         time.gmtime(time_one - float(time_two)))
-    diff = diff.replace(diff.split(" ")[0],
-                        str(int(diff.split(" ")[0]) - 1))
-    return diff
-
-
-def UTC_string_to_string_time(UTC):
-    """Return a formated time from a string UTC time."""
-    return time.strftime("%m-%d-%Y %I:%M %p", time.gmtime(float(UTC)))
-
 
 class Chat:
     """Chat cog."""
@@ -31,18 +18,14 @@ class Chat:
         """Initalization Function."""
         self.bot = bot
         asyncio.ensure_future(self.log_users())
-#       Unsure if this is the best way to add an event.
+#       Unsure if this is the best way to add a recurring event.
 
     async def log_users(self):
         """Log all online users as online."""
         while True:
-            await asyncio.sleep(10)
+            await asyncio.sleep(60)
             try:
                 data = fileIO.readFile("data/seen.json")
-#               with open("data/seen.json",
-#                         encoding="utf-8",
-#                         mode="r") as seen:
-#                   data = json.loads(seen.read())
             except Exception as e:
                 data = {}
             for member in self.bot.get_all_members():
@@ -60,12 +43,6 @@ class Chat:
                     continue
                 data[member.id]["last_at_keyboard"] = time.time()
             fileIO.writeFile("data/seen.json", data)
-#           with open("data/seen.json", encoding="utf-8", mode="w") as seen:
-#               seen.write(json.dumps(data,
-#                                     indent=4,
-#                                     sort_keys=True,
-#                                     separators=(',', ' : ')))
-
 
     @commands.command(hidden=True)
     async def say(self, *text):
@@ -75,10 +52,6 @@ class Chat:
         *text -- Text to echo
         """
         await self.bot.say(' '.join(text))
-
-    @commands.command(pass_context=True, name="eval")
-    async def _eval(self, ctx):
-        eval(" ".join(ctx.message.content.split(" ")[1:]), {"self": self, "ctx": ctx})
 
     @commands.command(pass_context=True)
     async def talk(self, ctx):
@@ -108,42 +81,61 @@ class Chat:
 
         await self.bot.send_message(ctx.message.channel, reply, tts=True)
 
-    @commands.command(pass_context=True)
-    async def seen(self, ctx, *target_users: str):
-        """Return how long ago supplied target_user has been online.
+    @commands.command()
+    async def seen(self, *target_users: str):
+        """Return how long ago supplied user mentions or names have been online.
 
         Keyword arguments:
-        target_user -- Name of user to lookup.
+        usernames -- Names of user to lookup.
 
         """
+        logged_users = fileIO.readFile("data/seen.json")
         for target_user in target_users:
-            logged_users = fileIO.readFile("data/seen.json")
-#           with open("data/seen.json", encoding="utf-8", mode="r") as seen:
-#               logged_users = json.loads(seen.read())
             if "<@" in target_user:
                 target_user = target_user.split("<@")[1].split(">")[0]
                 if target_user in logged_users:
                     found_users = [logged_users[target_user]]
             else:
-                found_users = [logged_users[user_id] for user_id in logged_users if logged_users[user_id]["name"].lower() == target_user.lower()]
+                found_users = [logged_users[user_id]
+                               for user_id in logged_users
+                               if logged_users[user_id]["name"].lower() == target_user.lower()]
             if found_users == []:
                 await self.bot.say("{} could not be found..."
                                    .format(target_user))
                 return
 
             for found_user in found_users:
-                online_diff = get_time_difference(time.time(), found_user["last_online"])
-                last_at_keyboard_diff = get_time_difference(time.time(), found_user["last_at_keyboard"])
                 await self.bot.say("```\n"
-                                   "|{}\n"
-                                   "|             D  H M\n"
-                                   "|Online:      {}\n"
-                                   "|At Keyboard: {}"
+                                   "┌───────────────────────┐\n"
+                                   "├{}{}│\n"
+                                   "│             D  H  M  S│\n"
+                                   "├Online───────{}│\n"
+                                   "├At Keyboard──{}│\n"
+                                   "└───────────────────────┘\n"
                                    "```"
                                    .format(found_user["name"],
-                                           online_diff,
-                                           last_at_keyboard_diff))
+                                           " " * (23 - len(found_user["name"])),
+                                           self.get_since(found_user["last_online"]),
+                                           self.get_since(found_user["last_at_keyboard"])))
 
+    def get_since(self, since_when):
+        """Get time since 'since_when' in days, hours, and minutes.
+
+        Keyword Arguments:
+        since_when -- Time to get amount of days, hours, and
+                      minutes it has been since.
+
+        Returns:
+        str -- String representation of how many
+               days, hours, and minutes it's been since 'since_when'.
+               Format  -  D  H:M
+               Example - '5 06:24'
+
+        """
+        diff = time.strftime("%j %H:%M:%S",
+                             time.gmtime(time.time() - float(since_when)))
+        return diff.replace(diff.split(" ")[0],
+                            str(int(diff.split(" ")[0]) - 1))
 
 
 def setup(bot):
