@@ -1,11 +1,11 @@
-"""Test cog."""
+"""Game cog."""
 import random
 from discord.ext import commands
 
 games = {}
 
-class Test:
-    """Test cog."""
+class Game:
+    """Game cog."""
 
     def __init__(self, bot):
         """Initalization function."""
@@ -69,7 +69,6 @@ class TicTacToe(object):
     def receive_command(self, string):
         if not string.split(" ")[0].isdecimal() or not string.split(" ")[1].isdecimal():
             self.status_message = "Must have x and y as int"
-            self.redraw()
             return
 
         x = int(string.split(" ")[0])
@@ -77,31 +76,25 @@ class TicTacToe(object):
 
         if (x <= 0 or x >= 4) or (y <= 0 or y >= 4):
             self.status_message = "Must be between 1 and 3"
-            self.redraw()
             return
 
         if self.board[x-1][y-1] != " ":
             self.status_message = "That spot is filled"
-            self.redraw()
             return
 
         self.board[x-1][y-1] = "O"
 
         if self.check_win():
             self.status_message = "You Win!"
-            self.redraw()
             return
         elif self.check_lose():
             self.status_message = "You Lost!"
-            self.redraw()
             return
         elif self.game_over():
             self.status_message = "Draw!"
-            self.redraw()
             return
         else:
             self.bot_move()
-            self.redraw()
             return
 
     def bot_move(self):
@@ -151,7 +144,7 @@ class TicTacToe(object):
 
 def setup(bot):
     """Called when cog is loaded via load_extension()."""
-    test = Test(bot)
-    bot.add_listener(test.receive_message, "on_message")
-    bot.add_listener(test.edit_message, "on_message_edit")
-    bot.add_cog(test)
+    game = Game(bot)
+    bot.add_listener(game.receive_message, "on_message")
+    bot.add_listener(game.edit_message, "on_message_edit")
+    bot.add_cog(game)
