@@ -23,7 +23,6 @@ class Chat:
     async def log_users(self):
         """Log all online users as online."""
         while True:
-            await asyncio.sleep(60)
             try:
                 data = fileIO.readFile("data/seen.json")
             except Exception as e:
@@ -43,6 +42,7 @@ class Chat:
                     continue
                 data[member.id]["last_at_keyboard"] = time.time()
             fileIO.writeFile("data/seen.json", data)
+            await asyncio.sleep(60)
 
     @commands.command(hidden=True)
     async def say(self, *text):
