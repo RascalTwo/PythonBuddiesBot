@@ -13,6 +13,7 @@ class Game:
         self.temp_output = {}
 
     @commands.command(pass_context=True)
+    """Play tic-tac-toe without spamming messages."""
     async def tictactoe(self, ctx):
         output = await self.bot.say("Enter the message `CONSOLE:`")
         print(type(ctx.message.author.id))
