@@ -18,14 +18,15 @@ bot = commands.Bot(command_prefix=commands.when_mentioned_or(config.prefix),
                    help_attrs=help_attrs)
 
 
-# a quick thing i made to look in a cogs folder and save all extensions in
-# the list
-
-
+# Slightly longer method to find cogs recursively in the cogs folder
 def list_cogs():
-    return ['cogs.' + i.replace('/', '\\').split('\\')[0][:-3]
-            for i in os.listdir('cogs') if i.endswith('.py')]
-
+    cogs = []
+    for root, _, filenames in os.walk('cogs'):
+        for filename in filenames:
+            full_name = os.path.join(root, filename)
+            if full_name.endswith('.py') and all(word not in full_name for word in ['pycache', "__init__", "util"]):
+                cogs.append(full_name.replace('/', '.').replace('\\', '.')[0:-3])
+    return cogs
 
 def load_cog(cog):
     try:
