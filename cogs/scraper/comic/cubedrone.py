@@ -1,6 +1,6 @@
-"""Commitstrip comic scraper.
+"""CubeDrone comic scraper.
 
-Get the latest or a random comic from http://www.commitstrip.com/
+Get the latest or a random comic from http://www.cube-drone.com/
 
 """
 import random
@@ -9,47 +9,37 @@ from .comic_scraper import ComicScraper
 
 
 @ComicScraper.comic.group(pass_context=True)  # pylint: disable=no-member
-async def commitstrip(ctx):
-    """Main CommitStrip command."""
+async def cubedrone(ctx):
+    """Main CubeDrone command."""
     if ctx.invoked_subcommand is None:
         await ctx.bot.pm_help(ctx)
 
 
-@commitstrip.command(name="random", pass_context=True)
-async def commitstrip_random(ctx):
-    """Return a random CommitStrip comic."""
+@cubedrone.command(name="random", pass_context=True)
+async def cubedrone_random(ctx):
+    """Return a random CubeDrone comic."""
     # Get the last page number
     message = await ctx.bot.say("Loading...")
-    index_html = (await ctx.bot.cogs["ComicScraper"].fetch_page("http://www.commitstrip.com/")).decode("utf-8")
-    last_page_number = int(index_html.split('<a class="last" href="')[1].split('"')[0].split("/")[5].split("/")[0])
-
-    # Get the HTML of a random page between 1 and last page number
-    random_page_url = "http://www.commitstrip.com/en/page/{}".format(random.randint(1, last_page_number))
-    random_page = (await ctx.bot.cogs["ComicScraper"].fetch_page(random_page_url)).decode("utf-8")
-    comic_list_html = [comic_raw.split("</div>")[0] for comic_raw in random_page.split('<div class="excerpt">')]
-
-    # Get rid of all non-comic code before first '<div class="excerpt">'
-    comic_list_html.pop(0)
-
-    # Get the title and image of random comic.
-    comic = (await commitstrip_comic_from_url(ctx, random.choice(comic_list_html).split('<a href="')[1].split('"')[0]))
+    index_html = (await ctx.bot.cogs["ComicScraper"].fetch_page("https://cube-drone.com/")).decode("utf-8")
+    total_comics = int(index_html.split("<div class='order bg-primary'>")[1].split("</div>")[0])
+    comic_url = "https://cube-drone.com/comics/n/{}".format(random.randint(1, total_comics))
+    comic = (await cubedrone_comic_from_url(ctx, comic_url))
     await ctx.bot.edit_message(message, "**Title**: `{}`\n"
                                         "**Image**: {}".format(comic[0],
                                                                comic[1]))
 
 
-@commitstrip.command(name="latest", pass_context=True)
-async def commitstrip_latest(ctx):
-    """Return the latest CommitStrip comic."""
+@cubedrone.command(name="latest", pass_context=True)
+async def cubedrone_latest(ctx):
+    """Return the latest CubeDrone comic."""
     message = await ctx.bot.say("Loading...")
-    index_html = (await ctx.bot.cogs["ComicScraper"].fetch_page("http://www.commitstrip.com/")).decode("utf-8")
-    url_http = index_html.split('<div class="excerpt">')[1].split('<a href="')[1].split('"')[0]
-    comic = (await commitstrip_comic_from_url(ctx, url_http))
+    comic = (await cubedrone_comic_from_url(ctx, "https://cube-drone.com/"))
     await ctx.bot.edit_message(message, "**Title**: `{}`\n"
                                         "**Image**: {}".format(comic[0],
                                                                comic[1]))
 
-async def commitstrip_comic_from_url(ctx, comic_url):
+
+async def cubedrone_comic_from_url(ctx, comic_url):
     """Return comic title and comic image url from comic page url.
 
     Keyword Arguments:
@@ -62,9 +52,8 @@ async def commitstrip_comic_from_url(ctx, comic_url):
 
     """
     comic_html = (await ctx.bot.cogs["ComicScraper"].fetch_page(comic_url)).decode("utf-8")
-    # 'src' is not always the first attribute after the opening img tag.
-    comic_image = comic_html.split('<div class="entry-content">')[1].split("<img ")[1].split('src="')[1].split('"')[0]
-    comic_title = comic_html.split('<h1 class="entry-title">')[1].split("</h1>")[0]
+    comic_image = comic_html.split("<img class='comic img-responsive' src='")[1].split("'")[0]
+    comic_title = comic_html.split("<h2 class='comic_title'>")[1].split("<small>")[0]
     return [parse_html_entities(comic_title), comic_image]
 
 
@@ -87,7 +76,6 @@ def parse_html_entities(string):
         except ValueError:
             pass
     return string
-
 
 def setup(_):
     """Added to prevent cog loading to throw an error.
