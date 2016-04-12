@@ -17,6 +17,15 @@ class Chat:
         """
         await self.bot.say(' '.join(text))
 
+    @commands.command(hidden=True)
+    async def ping(self):
+        """Command that says 'Pong'.
+
+        Keyword arguments:
+        None
+        """
+        await self.bot.say('Pong')
+
     @commands.command(pass_context=True)
     async def talk(self, ctx):
 
