@@ -2,3 +2,4 @@ aiohttp>=0.21.0,<0.22.0
 git+https://github.com/Rapptz/discord.py@async
 chatterbot
 translate
+wikiquote

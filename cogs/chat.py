@@ -1,7 +1,8 @@
-from random import choice
+import random
 from discord.ext import commands
 from chatterbot import ChatBot
 from translate import Translator
+import wikiquote
 
 
 # Chat cog
@@ -40,7 +41,7 @@ class Chat:
         if len(options) < 2:
             await self.bot.say('Not enough options to choose from')
         else:
-            await self.bot.say(choice(options))
+            await self.bot.say(random.choice(options))
 
     @commands.command()
     async def translate(self, language, *text):
@@ -55,12 +56,10 @@ class Chat:
         translator = Translator(to_lang=language)
         translation = translator.translate(text_to_string)
 
-        print(translation)
         await self.bot.say(translation)
 
     @commands.command(pass_context=True)
     async def talk(self, ctx):
-
         """Command that implements the talk to the bot function.
         It uses ChatterBot, is a machine-learning based
         conversational dialog engine build in Python which makes
@@ -72,11 +71,32 @@ class Chat:
         ctx     -- Context reference to get message
         tts     -- Set to true for text to speed implementation
         """
-
         msg = ctx.message.content
         reply = self.chatbot.get_response(msg)
 
         await self.bot.send_message(ctx.message.channel, reply, tts=True)
+
+    @commands.command()
+    async def quote(self, choice):
+
+        """Command that implements the function of generating a
+        random quote of the day.
+
+        **Dependencies**: pip install wikiquote
+
+        **Keyword arguments**:
+        choice -- either 'QOTD' (Quote of the day) or 'R' (Random)
+        """
+
+        if choice == 'QOTD':
+            q = wikiquote.quote_of_the_day()
+            print(q[0])
+            await self.bot.say("'" + q[0] + "'" + ' -- ' + q[1])
+        elif choice == 'R':
+            authors = []
+            authors = wikiquote.random_titles(max_titles=5)
+            random_author = random.choice(authors)
+            await self.bot.say("'" + random.choice(wikiquote.quotes(random_author)) + "'")
 
 
 def setup(bot):
