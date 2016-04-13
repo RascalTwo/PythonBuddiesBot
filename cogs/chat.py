@@ -1,5 +1,7 @@
+from random import choice
 from discord.ext import commands
 from chatterbot import ChatBot
+
 
 
 # Chat cog
@@ -25,6 +27,18 @@ class Chat:
         None
         """
         await self.bot.say('Pong')
+
+    @commands.command()
+    async def decide(self, *options):
+        """Command that decided between multiple options
+        **Use double quotes for each option**
+        Keyword arguments:
+        options
+        """
+        if len(options) < 2:
+            await self.bot.say('Not enough options to choose from')
+        else:
+            await self.bot.say(choice(options))
 
     @commands.command(pass_context=True)
     async def talk(self, ctx):
