@@ -5,7 +5,7 @@ Get the latest or a random comic from http://www.cube-drone.com/
 """
 import random
 import re
-from .comic_scraper import ComicScraper
+from ..comic_scraper import ComicScraper
 
 
 @ComicScraper.comic.group(pass_context=True)  # pylint: disable=no-member
@@ -77,11 +77,7 @@ def parse_html_entities(string):
             pass
     return string
 
-def setup(_):
-    """Added to prevent cog loading to throw an error.
-
-    Improvements to cog loading and usage of __init__.py
-    files will allow this to be removed in the future.
-
-    """
-    pass
+def setup(bot):
+    """Called when cog is loaded via load_extension()."""
+    bot.cogs["ComicScraper"].random_commands.append(cubedrone_random)
+    bot.cogs["ComicScraper"].latest_commands.append(cubedrone_latest)
