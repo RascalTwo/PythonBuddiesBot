@@ -71,7 +71,7 @@ class Chat:
         ctx     -- Context reference to get message
         tts     -- Set to true for text to speed implementation
         """
-        msg = ctx.message.content
+        msg = ctx.message.content.split("talk ")[1]
         reply = self.chatbot.get_response(msg)
 
         await self.bot.send_message(ctx.message.channel, reply, tts=True)
@@ -90,7 +90,6 @@ class Chat:
 
         if choice == 'QOTD':
             q = wikiquote.quote_of_the_day()
-            print(q[0])
             await self.bot.say("'" + q[0] + "'" + ' -- ' + q[1])
         elif choice == 'R':
             authors = []
