@@ -1,3 +1,8 @@
+"""Chat cog.
+
+Contains many all chat-related commands.
+
+"""
 import random
 from datetime import datetime
 from pytz import timezone
@@ -8,38 +13,44 @@ from translate import Translator
 import wikiquote
 
 
-# Chat cog
-class Chat:
+class Chat(object):
+    """Card cog."""
 
     def __init__(self, bot):
+        """Initalization function."""
         self.bot = bot
         self.chatbot = ChatBot("Ron Obvious")
         self.chatbot.train("chatterbot.corpus.english")
 
-    @commands.command(hidden=True)
-    async def say(self, *text):     # !say text
-        """Command that echos what you say.
+    @commands.command()
+    async def say(self, *text):
+        """Echos what you say.
 
         Keyword arguments:
         *text -- Text to echo
+
         """
         await self.bot.say(' '.join(text))
 
-    @commands.command(hidden=True)
+    @commands.command()
     async def ping(self):
-        """Command that says 'Pong'.
+        """Says 'Pong'.
 
         Keyword arguments:
         None
+
         """
         await self.bot.say('Pong')
 
     @commands.command()
     async def decide(self, *options):
-        """Command that decided between multiple options
+        """Decides between multiple options
+
         **Use double quotes for each option**
+
         Keyword arguments:
         options
+
         """
         if len(options) < 2:
             await self.bot.say('Not enough options to choose from')
@@ -48,12 +59,17 @@ class Chat:
 
     @commands.command()
     async def translate(self, language, *text):
-        """Command that translates text from english to specified language
+        """Translates text from English to specified language
+
         **Use double quotes for each option**
-        **Dependencies**: pip install translate (https://github.com/terryyin/google-translate-python)
-        **Keyword arguments**:
-        language
-        text
+
+        **Dependencies**: pip install translate
+                          (https://github.com/terryyin/google-translate-python)
+
+        Keyword arguments:
+        language -- Two-letter code for the languate to translate to
+        text -- Text to translate.
+
         """
         text_to_string = ''.join(text)
         translator = Translator(to_lang=language)
@@ -61,64 +77,65 @@ class Chat:
 
         await self.bot.say(translation)
 
-    @commands.command(pass_context=True)
-    async def talk(self, ctx):
-        """Command that implements the talk to the bot function.
+    @commands.command()
+    async def talk(self, *message):
+        """Speak to ChatterBot.
+
         It uses ChatterBot, is a machine-learning based
         conversational dialog engine build in Python which makes
         it possible to generate responses based on collections of
         known conversations
-        **Dependencies**: pip install chatterbot
-        **Keyword arguments**:
-        chatbot -- stores chatbot object
-        ctx     -- Context reference to get message
-        tts     -- Set to true for text to speed implementation
-        """
-        msg = ctx.message.content.split("talk ")[1]
-        reply = self.chatbot.get_response(msg)
 
-        await self.bot.send_message(ctx.message.channel, reply, tts=True)
+        **Dependencies**: pip install chatterbot
+
+        Keyword arguments:
+        message -- Message to send to the chatbot.
+
+        """
+        reply = self.chatbot.get_response(" ".join(message))
+        await self.bot.say(reply, tts=True)
 
     @commands.command()
     async def quote(self, choice):
-
-        """Command that implements the function of generating a
-        random quote of the day.
+        """Generating a random quote or get the quote of the day.
 
         **Dependencies**: pip install wikiquote
 
-        **Keyword arguments**:
+        Keyword arguments:
         choice -- either 'QOTD' (Quote of the day) or 'R' (Random)
+
         """
 
-        if choice == 'QOTD':
-            q = wikiquote.quote_of_the_day()
-            await self.bot.say("'" + q[0] + "'" + ' -- ' + q[1])
-        elif choice == 'R':
-            authors = []
-            authors = wikiquote.random_titles(max_titles=5)
-            if authors == []:
-                authors = ['Dune', 'Johannes Kepler', 'Rosa Parks']
+        if choice.upper() == 'QOTD':
+            quote = wikiquote.quote_of_the_day()
+            await self.bot.say("'{}' -- {}".format(quote[0], quote[1]))
+        elif choice.upper() == 'R':
+            while True:
+                authors = wikiquote.random_titles(max_titles=5)
                 random_author = random.choice(authors)
-                await self.bot.say("'" + random.choice(wikiquote.quotes(random_author)) + "'")
-            else:
-                random_author = random.choice(authors)
-                await self.bot.say("'" + random.choice(wikiquote.quotes(random_author)) + "'")
+                if random_author.isdigit():
+                    continue
+                random_quote = random.choice(wikiquote.quotes(random_author))
+                await self.bot.say("'{}' -- {}"
+                                   .format(random_quote,
+                                           random_author))
+                break
 
     @commands.command()
-    async def time(self, t_z):
-        """Command that returns current time and time in the timezone listed
+    async def time(self, timezone_code):
+        """Return current time and time in the timezone listed.
 
         **Dependencies**: pip install pytz tzlocal
 
-        **Keyword arguments**:
-        t_z  -- timezone
+        Keyword arguments:
+        timezone_code  -- Code for timezone
         """
-        local = get_localzone()
-        local_time = datetime.now(local)
-        required_timezone = timezone(t_z)
-        converted_time = datetime.now(required_timezone)
-        await self.bot.say("```Local time : {} \n\n   {}     : {}```".format(local_time, t_z, converted_time))
+        local_time = datetime.now(get_localzone())
+        converted_time = datetime.now(timezone(timezone_code.upper()))
+        await self.bot.say("```Local time : {} \n\n   {}     : {}```"
+                           .format(local_time, timezone_code, converted_time))
+
 
 def setup(bot):
+    """Called when cog is loaded via load_extension()."""
     bot.add_cog(Chat(bot))
