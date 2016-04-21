@@ -11,6 +11,10 @@ from discord.ext import commands
 from chatterbot import ChatBot
 from translate import Translator
 import wikiquote
+from .utils import fileIO
+import asyncio
+import json
+import time
 
 
 class Chat(object):
@@ -21,6 +25,31 @@ class Chat(object):
         self.bot = bot
         self.chatbot = ChatBot("Ron Obvious")
         self.chatbot.train("chatterbot.corpus.english")
+        asyncio.ensure_future(self.log_users())
+
+    async def log_users(self):
+        """Log all online users as online."""
+        while True:
+            try:
+                data = fileIO.readFile("data/seen.json")
+            except Exception as e:
+                data = {}
+            for member in self.bot.get_all_members():
+                if str(member.status) == "offline":
+                    continue
+                if member.id not in data:
+                    data[member.id] = {
+                        "name": member.name,
+                        "last_online": time.time()
+                    }
+                else:
+                    data[member.id]["name"] = member.name
+                    data[member.id]["last_online"] = time.time()
+                if str(member.status) == "idle":
+                    continue
+                data[member.id]["last_at_keyboard"] = time.time()
+            fileIO.writeFile("data/seen.json", data)
+            await asyncio.sleep(60)
 
     @commands.command()
     async def say(self, *text):
@@ -134,6 +163,62 @@ class Chat(object):
         converted_time = datetime.now(timezone(timezone_code.upper()))
         await self.bot.say("```Local time : {} \n\n   {}     : {}```"
                            .format(local_time, timezone_code, converted_time))
+
+    @commands.command()
+    async def seen(self, *target_users: str):
+        """Return how long ago supplied user mentions or names have been online.
+
+        Keyword arguments:
+        usernames -- Names of user to lookup.
+
+        """
+        logged_users = fileIO.readFile("data/seen.json")
+        for target_user in target_users:
+            if "<@" in target_user:
+                target_user = target_user.split("<@")[1].split(">")[0]
+                if target_user in logged_users:
+                    found_users = [logged_users[target_user]]
+            else:
+                found_users = [logged_users[user_id]
+                               for user_id in logged_users
+                               if logged_users[user_id]["name"].lower() == target_user.lower()]
+            if found_users == []:
+                await self.bot.say("{} could not be found..."
+                                   .format(target_user))
+                return
+
+            for found_user in found_users:
+                await self.bot.say("```\n"
+                                   "┌───────────────────────┐\n"
+                                   "├{}{}│\n"
+                                   "│             D  H  M  S│\n"
+                                   "├Online───────{}│\n"
+                                   "├At Keyboard──{}│\n"
+                                   "└───────────────────────┘\n"
+                                   "```"
+                                   .format(found_user["name"],
+                                           " " * (23 - len(found_user["name"])),
+                                           self.get_since(found_user["last_online"]),
+                                           self.get_since(found_user["last_at_keyboard"])))
+
+    def get_since(self, since_when):
+        """Get time since 'since_when' in days, hours, and minutes.
+
+        Keyword Arguments:
+        since_when -- Time to get amount of days, hours, and
+                      minutes it has been since.
+
+        Returns:
+        str -- String representation of how many
+               days, hours, and minutes it's been since 'since_when'.
+               Format  -  D  H:M
+               Example - '5 06:24'
+
+        """
+        diff = time.strftime("%j %H:%M:%S",
+                             time.gmtime(time.time() - float(since_when)))
+        return diff.replace(diff.split(" ")[0],
+                            str(int(diff.split(" ")[0]) - 1))
 
 
 def setup(bot):

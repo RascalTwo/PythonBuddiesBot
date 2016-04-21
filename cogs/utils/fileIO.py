@@ -13,11 +13,8 @@ def readFile(filepath):
     dict or bool -- The JSON dictionary if successful, False otherwise.
 
     """
-    try:
-        with open(filepath, encoding="utf-8", mode="r") as reading_file:
-            return json.loads(reading_file.read())
-    except OSError:
-        return False
+    with open(filepath, encoding="utf-8", mode="r") as reading_file:
+        return json.loads(reading_file.read())
 
 
 def writeFile(filepath, data):
@@ -31,12 +28,9 @@ def writeFile(filepath, data):
     bool -- True if successful, False otherwise.
 
     """
-    try:
-        with open(filepath, encoding="utf-8", mode="w") as writing_file:
-            writing_file.write(json.dumps(data,
-                                          indent=4,
-                                          sort_keys=True,
-                                          separators=(',', ' : ')))
-        return True
-    except OSError:
-        return False
+    with open(filepath, encoding="utf-8", mode="w") as writing_file:
+        writing_file.write(json.dumps(data,
+                                      indent=4,
+                                      sort_keys=True,
+                                      separators=(',', ' : ')))
+    return True

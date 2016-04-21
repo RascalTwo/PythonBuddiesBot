@@ -1,11 +1,11 @@
 import os
-
 import discord
 from discord.ext import commands
-
 import config
 from cogs.utils import checks
-
+import sys
+from io import StringIO
+import asyncio
 # description showed when you use the help command
 description = 'test'
 
@@ -51,10 +51,52 @@ async def on_ready():
     print('ID: ' + bot.user.id)
     print('------')
 
+    await bot.change_status(discord.Game(name="with the Discord API"))
+
     # this can load the cogs/extensions
     for cog in list_cogs():
         load_cog(cog)
 
+@bot.command(pass_context=True, name="eval")
+@checks.is_owner()
+async def _eval(ctx, *, code : str):
+    code = code.strip('` ')
+    python = '```Python\n{}\n```'
+    result = None
+
+    try:
+        result = eval(code)
+    except Exception as e:
+        await bot.say(python.format(type(e).__name__ + ': ' + str(e)))
+        return
+
+    if asyncio.iscoroutine(result):
+        result = await result
+
+    await bot.say(python.format(result))
+
+@bot.command(pass_context=True, name="exec")
+@checks.is_owner()
+async def _exec(ctx, *, code : str):
+    code = code.strip('` ')
+    python = '```Python\n{}\n```'
+    result = None
+    coros = []
+    try:
+        result = StringIO()
+        sys.stdout = result
+        exec(compile(code.replace("Python", ""), "<string>", "exec"))
+        result = result.getvalue()
+        sys.stdout = sys.__stdout__
+    except Exception as e:
+        await bot.say(python.format(type(e).__name__ + ': ' + str(e)))
+        return
+
+    for coro in coros:
+        if asyncio.iscoroutine(coro):
+            result += "\n{} - {}".format(coro, await coro)
+
+    await bot.say(python.format(result))
 
 # runs whenever someone sends a message
 @bot.event
