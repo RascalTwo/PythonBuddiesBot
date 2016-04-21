@@ -87,14 +87,15 @@ class RedditScraper(GeneralScraper):
         for post in sr_posts:
             if i >= num:
                 break
-            posts.append(yield from self.get_post_from_json(post))
+            post = yield from self.get_post_from_json(post)
+            posts.append(post)
             i += 1
         return posts
 
     @asyncio.coroutine
     def get_subreddit_json(self, session, subreddit, category):
-        return yield from self.fetch_json(
-            session=session, url='https://www.reddit.com/r/' + subreddit + '/' + category + '/.json')
+        return (yield from self.fetch_json(
+            session=session, url='https://www.reddit.com/r/' + subreddit + '/' + category + '/.json'))
 
     @asyncio.coroutine
     def get_subreddit_top(self, session, subreddit, num_posts, category):
@@ -103,7 +104,7 @@ class RedditScraper(GeneralScraper):
             sr_posts = sr_data['data']['children']
         except KeyError:
             return ['Posts could not be loaded, are you sure thats a subreddit?']
-        return yield from self.get_posts(sr_posts, num_posts)
+        return (yield from self.get_posts(sr_posts, num_posts))
 
 
 def setup(bot):
