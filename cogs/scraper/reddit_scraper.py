@@ -1,6 +1,7 @@
 from datetime import datetime
 from discord.ext import commands
 from .scraper_utils import GeneralScraper
+import asyncio
 
 
 class RedditScraper(GeneralScraper):

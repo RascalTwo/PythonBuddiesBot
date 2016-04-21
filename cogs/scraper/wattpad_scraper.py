@@ -4,6 +4,7 @@ Many features to scrape from wattpad.
 """
 from discord.ext import commands
 from .scraper_utils import GeneralScraper
+import asyncio
 
 # API_STORYINFO = 'https://www.wattpad.com/api/v3/stories/'
 # API_HOTSTORYLIST = 'https://www.wattpad.com/api/v3/stories?filter=hot'
