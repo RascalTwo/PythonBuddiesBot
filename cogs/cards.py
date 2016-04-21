@@ -18,13 +18,15 @@ class Cards:
         self.bot = bot
 
     @commands.command(pass_context=True)
-    async def balance(self, ctx):
+    @asyncio.coroutine
+    def balance(self, ctx):
         """Return the balance of executing user."""
-        await self.bot.say("Current Balance: $**{}**"
+        yield from self.bot.say("Current Balance: $**{}**"
                            .format(Economy.get_user_balance(ctx.message.author.id)))
 
     @commands.group(pass_context=True)
-    async def game(self, ctx):
+    @asyncio.coroutine
+    def game(self, ctx):
         """Base command for playing card games.
 
         Playable games:
@@ -33,11 +35,12 @@ class Cards:
 
         """
         if ctx.invoked_subcommand is None:
-            await self.bot.say("Try one of these games:\n"
+            yield from self.bot.say("Try one of these games:\n"
                                "HiLo - game hilo bet_amount")
 
     @game.command(pass_context=True)
-    async def hilo(self, ctx):
+    @asyncio.coroutine
+    def hilo(self, ctx):
         """Start a game of HiLo.
 
         HiLo is a game in which two unique cards are randomly generated. You
@@ -57,25 +60,26 @@ class Cards:
         """
         arguments = ctx.message.content.lower().split(" ")
         if len(arguments) != 3:
-            await self.bot.say("```Command: game hilo bet_amount\n"
+            yield from self.bot.say("```Command: game hilo bet_amount\n"
                                "Example: game hilo 10```")
             return
         if not arguments[2].isdecimal():
-            await self.bot.say("```Bet amount needs to be a number.```")
+            yield from self.bot.say("```Bet amount needs to be a number.```")
             return
         if Economy.get_user_balance(ctx.message.author.id) < int(arguments[2]):
-            await self.bot.say("`You don't have $**{}**!`"
+            yield from self.bot.say("`You don't have $**{}**!`"
                                .format(arguments[2]))
             return
         hilo_game_instance = HiLo_Game(ctx.message.author, arguments[2])
         Economy.change_user_balance(ctx.message.author.id,
                                     int(arguments[2]) * -1)
-        await self.bot.say("Current Balance: $**{}**"
+        yield from self.bot.say("Current Balance: $**{}**"
                            .format(Economy.get_user_balance(ctx.message.author.id)))
-        await self.bot.say(hilo_game_instance.logic())
+        yield from self.bot.say(hilo_game_instance.logic())
         playing_users[ctx.message.author.id] = hilo_game_instance
 
-    async def receive_message(self, message):
+    @asyncio.coroutine
+    def receive_message(self, message):
         """Called whenever any player sends a message."""
         if (message.author.id == self.bot.user.id or
                 message.author.id not in playing_users):
@@ -84,7 +88,7 @@ class Cards:
         if isinstance(game, HiLo_Game):
             response = game.logic(message)
             if response is not None:
-                await self.bot.send_message(message.channel, response)
+                yield from self.bot.send_message(message.channel, response)
 
 
 class Card(object):

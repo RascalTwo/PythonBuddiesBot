@@ -11,13 +11,15 @@ class RedditScraper(GeneralScraper):
         self.bot = bot
 
     @commands.group(name='reddit', pass_context=True)
-    async def _reddit(self, ctx):
+    @asyncio.coroutine
+    def _reddit(self, ctx):
         """Useful commands for getting information from reddit."""
         if ctx.invoked_subcommand is None:
-            await self.bot.pm_help(ctx)
+            yield from self.bot.pm_help(ctx)
 
     @_reddit.command(pass_context=True, name='get')
-    async def get(self, ctx: commands.Context, subreddit, num_posts=5, category='hot'):
+    @asyncio.coroutine
+    def get(self, ctx: commands.Context, subreddit, num_posts=5, category='hot'):
         """Base command for returning data from a subreddit.
 
         Keyword arguments:
@@ -25,19 +27,20 @@ class RedditScraper(GeneralScraper):
         category -- Category to look at [hot, new, rising, controversial, top] (default hot)
         """
         if num_posts > 25:
-            await self.bot.say('Number of posts must be no greater than 25.')
+            yield from self.bot.say('Number of posts must be no greater than 25.')
             return
         if subreddit.strip():
             if category in self.categories:
-                result = await self.get_subreddit_top(
+                result = yield from self.get_subreddit_top(
                     session=self.session, subreddit=subreddit, num_posts=num_posts, category=category)
-                await self.bot.say('\n\n'.join(result))
+                yield from self.bot.say('\n\n'.join(result))
             else:
-                await self.bot.say('Valid categories are {}: '.format(', '.join(self.categories)))
+                yield from self.bot.say('Valid categories are {}: '.format(', '.join(self.categories)))
         else:
-            await self.bot.pm_help(ctx)
+            yield from self.bot.pm_help(ctx)
 
-    async def get_post_from_json(self, post_data: dict):
+    @asyncio.coroutine
+    def get_post_from_json(self, post_data: dict):
         post = post_data['data']
         score = post['score']
         author = post['author']
@@ -76,27 +79,30 @@ class RedditScraper(GeneralScraper):
         **NSFW:** {5}
         '''.format(title, link, author, ' '.join(created), score, is_nsfw)
 
-    async def get_posts(self, sr_posts, num):
+    @asyncio.coroutine
+    def get_posts(self, sr_posts, num):
         posts = []
         i = 0
         for post in sr_posts:
             if i >= num:
                 break
-            posts.append(await self.get_post_from_json(post))
+            posts.append(yield from self.get_post_from_json(post))
             i += 1
         return posts
 
-    async def get_subreddit_json(self, session, subreddit, category):
-        return await self.fetch_json(
+    @asyncio.coroutine
+    def get_subreddit_json(self, session, subreddit, category):
+        return yield from self.fetch_json(
             session=session, url='https://www.reddit.com/r/' + subreddit + '/' + category + '/.json')
 
-    async def get_subreddit_top(self, session, subreddit, num_posts, category):
+    @asyncio.coroutine
+    def get_subreddit_top(self, session, subreddit, num_posts, category):
         try:
-            sr_data = await self.get_subreddit_json(session=session, subreddit=subreddit, category=category)
+            sr_data = yield from self.get_subreddit_json(session=session, subreddit=subreddit, category=category)
             sr_posts = sr_data['data']['children']
         except KeyError:
             return ['Posts could not be loaded, are you sure thats a subreddit?']
-        return await self.get_posts(sr_posts, num_posts)
+        return yield from self.get_posts(sr_posts, num_posts)
 
 
 def setup(bot):

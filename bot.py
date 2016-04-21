@@ -38,20 +38,22 @@ def load_cog(cog):
 
 @bot.command(name='exit')
 @checks.is_owner()
-async def exit_cmd():
-    await bot.say("Logging out.")
-    await bot.logout()
+@asyncio.coroutine
+def exit_cmd():
+    yield from bot.say("Logging out.")
+    yield from bot.logout()
 
 
 # event for when the bot starts
 @bot.event
-async def on_ready():
+@asyncio.coroutine
+def on_ready():
     print('------')
     print('Username: ' + bot.user.name)
     print('ID: ' + bot.user.id)
     print('------')
 
-    await bot.change_status(discord.Game(name="with the Discord API"))
+    yield from bot.change_status(discord.Game(name="with the Discord API"))
 
     # this can load the cogs/extensions
     for cog in list_cogs():
@@ -59,7 +61,8 @@ async def on_ready():
 
 @bot.command(pass_context=True, name="eval")
 @checks.is_owner()
-async def _eval(ctx, *, code : str):
+@asyncio.coroutine
+def _eval(ctx, *, code : str):
     code = code.strip('` ')
     python = '```Python\n{}\n```'
     result = None
@@ -67,17 +70,18 @@ async def _eval(ctx, *, code : str):
     try:
         result = eval(code)
     except Exception as e:
-        await bot.say(python.format(type(e).__name__ + ': ' + str(e)))
+        yield from bot.say(python.format(type(e).__name__ + ': ' + str(e)))
         return
 
     if asyncio.iscoroutine(result):
-        result = await result
+        result = yield from result
 
-    await bot.say(python.format(result))
+    yield from bot.say(python.format(result))
 
 @bot.command(pass_context=True, name="exec")
 @checks.is_owner()
-async def _exec(ctx, *, code : str):
+@asyncio.coroutine
+def _exec(ctx, *, code : str):
     code = code.strip('` ')
     python = '```Python\n{}\n```'
     result = None
@@ -89,43 +93,47 @@ async def _exec(ctx, *, code : str):
         result = result.getvalue()
         sys.stdout = sys.__stdout__
     except Exception as e:
-        await bot.say(python.format(type(e).__name__ + ': ' + str(e)))
+        yield from bot.say(python.format(type(e).__name__ + ': ' + str(e)))
         return
 
     for coro in coros:
         if asyncio.iscoroutine(coro):
-            result += "\n{} - {}".format(coro, await coro)
+            result += "\n{} - {}".format(coro, (yield from coro))
 
-    await bot.say(python.format(result))
+    yield from bot.say(python.format(result))
 
 # runs whenever someone sends a message
 @bot.event
-async def on_message(message):
-    await bot.process_commands(message)
+@asyncio.coroutine
+def on_message(message):
+    yield from bot.process_commands(message)
 
 
 # this runs when someone runs a command
 @bot.event
-async def on_command(_, ctx):
+@asyncio.coroutine
+def on_command(_, ctx):
     message = ctx.message
     print('{0.author.name} {0.author.id} {0.channel.server.name} {0.channel.name} {0.clean_content}'.format(message))
 
 
-def verify_cog_name(cog: str) -> str:
+def verify_cog_name(cog):
     return 'cogs.' + cog if not cog.startswith('cogs.') else cog
 
 
 @bot.group(name='cog', pass_context=True)
 @checks.is_owner()
-async def _cog(ctx):
+@asyncio.coroutine
+def _cog(ctx):
     """Command to work with cogs."""
     if ctx.invoked_subcommand is None:
-        await bot.pm_help(ctx)
+        yield from bot.pm_help(ctx)
 
 
 @_cog.command(name='load')
 @checks.is_owner()
-async def load(cog: str):
+@asyncio.coroutine
+def load(cog: str):
     """Loads a cog.
 
     Keyword arguments:
@@ -133,15 +141,16 @@ async def load(cog: str):
     """
     cog = verify_cog_name(cog)
     if cog not in list_cogs():
-        await bot.say('The cog \'{0}\' could not be found.'.format(cog))
+        yield from bot.say('The cog \'{0}\' could not be found.'.format(cog))
         return
     load_cog(cog)
-    await bot.say('Loaded: {0}'.format(cog))
+    yield from bot.say('Loaded: {0}'.format(cog))
 
 
 @_cog.command(name='unload')
 @checks.is_owner()
-async def unload(cog: str):
+@asyncio.coroutine
+def unload(cog: str):
     """Unloads a cog.
 
     Keyword arguments:
@@ -150,12 +159,13 @@ async def unload(cog: str):
     cog = verify_cog_name(cog)
     bot.unload_extension(cog)
     print('Unloaded {0}'.format(cog))
-    await bot.say('Unloaded: {0}'.format(cog))
+    yield from bot.say('Unloaded: {0}'.format(cog))
 
 
 @_cog.command(name='reload')
 @checks.is_owner()
-async def reload(cog: str):
+@asyncio.coroutine
+def reload(cog: str):
     """Reloads a cog.
 
     Keyword arguments:
@@ -163,18 +173,19 @@ async def reload(cog: str):
     """
     cog = verify_cog_name(cog)
     if cog not in list_cogs():
-        await bot.say('The cog \'{0}\' could not be found.'.format(cog))
+        yield from bot.say('The cog \'{0}\' could not be found.'.format(cog))
         return
     bot.unload_extension(cog)
     load_cog(cog)
-    await bot.say('Reloaded: {0}'.format(cog))
+    yield from bot.say('Reloaded: {0}'.format(cog))
 
 
 @_cog.command(name='list')
 @checks.is_owner()
-async def list_cogs_cmd():
+@asyncio.coroutine
+def list_cogs_cmd():
     """Lists all cogs"""
-    await bot.say('Loaded cogs are: ' + ', '.join(list_cogs()))
+    yield from bot.say('Loaded cogs are: ' + ', '.join(list_cogs()))
     print('Loaded cogs are: ' + ', '.join(list_cogs()))
 
 bot.run(config.email, config.password)

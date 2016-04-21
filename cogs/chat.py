@@ -27,7 +27,8 @@ class Chat(object):
         self.chatbot.train("chatterbot.corpus.english")
         asyncio.ensure_future(self.log_users())
 
-    async def log_users(self):
+    @asyncio.coroutine
+    def log_users(self):
         """Log all online users as online."""
         while True:
             try:
@@ -49,30 +50,33 @@ class Chat(object):
                     continue
                 data[member.id]["last_at_keyboard"] = time.time()
             fileIO.writeFile("data/seen.json", data)
-            await asyncio.sleep(60)
+            yield from asyncio.sleep(60)
 
     @commands.command()
-    async def say(self, *text):
+    @asyncio.coroutine
+    def say(self, *text):
         """Echos what you say.
 
         Keyword arguments:
         *text -- Text to echo
 
         """
-        await self.bot.say(' '.join(text))
+        yield from self.bot.say(' '.join(text))
 
     @commands.command()
-    async def ping(self):
+    @asyncio.coroutine
+    def ping(self):
         """Says 'Pong'.
 
         Keyword arguments:
         None
 
         """
-        await self.bot.say('Pong')
+        yield from self.bot.say('Pong')
 
     @commands.command()
-    async def decide(self, *options):
+    @asyncio.coroutine
+    def decide(self, *options):
         """Decides between multiple options
 
         **Use double quotes for each option**
@@ -82,12 +86,13 @@ class Chat(object):
 
         """
         if len(options) < 2:
-            await self.bot.say('Not enough options to choose from')
+            yield from self.bot.say('Not enough options to choose from')
         else:
-            await self.bot.say(random.choice(options))
+            yield from self.bot.say(random.choice(options))
 
     @commands.command()
-    async def translate(self, language, *text):
+    @asyncio.coroutine
+    def translate(self, language, *text):
         """Translates text from English to specified language
 
         **Use double quotes for each option**
@@ -104,10 +109,11 @@ class Chat(object):
         translator = Translator(to_lang=language)
         translation = translator.translate(text_to_string)
 
-        await self.bot.say(translation)
+        yield from self.bot.say(translation)
 
     @commands.command()
-    async def talk(self, *message):
+    @asyncio.coroutine
+    def talk(self, *message):
         """Speak to ChatterBot.
 
         It uses ChatterBot, is a machine-learning based
@@ -122,10 +128,11 @@ class Chat(object):
 
         """
         reply = self.chatbot.get_response(" ".join(message))
-        await self.bot.say(reply, tts=True)
+        yield from self.bot.say(reply, tts=True)
 
     @commands.command()
-    async def quote(self, choice):
+    @asyncio.coroutine
+    def quote(self, choice):
         """Generating a random quote or get the quote of the day.
 
         **Dependencies**: pip install wikiquote
@@ -137,7 +144,7 @@ class Chat(object):
 
         if choice.upper() == 'QOTD':
             quote = wikiquote.quote_of_the_day()
-            await self.bot.say("'{}' -- {}".format(quote[0], quote[1]))
+            yield from self.bot.say("'{}' -- {}".format(quote[0], quote[1]))
         elif choice.upper() == 'R':
             while True:
                 authors = wikiquote.random_titles(max_titles=5)
@@ -145,13 +152,14 @@ class Chat(object):
                 if random_author.isdigit():
                     continue
                 random_quote = random.choice(wikiquote.quotes(random_author))
-                await self.bot.say("'{}' -- {}"
+                yield from self.bot.say("'{}' -- {}"
                                    .format(random_quote,
                                            random_author))
                 break
 
     @commands.command()
-    async def time(self, timezone_code):
+    @asyncio.coroutine
+    def time(self, timezone_code):
         """Return current time and time in the timezone listed.
 
         **Dependencies**: pip install pytz tzlocal
@@ -161,11 +169,12 @@ class Chat(object):
         """
         local_time = datetime.now(get_localzone())
         converted_time = datetime.now(timezone(timezone_code.upper()))
-        await self.bot.say("```Local time : {} \n\n   {}     : {}```"
+        yield from self.bot.say("```Local time : {} \n\n   {}     : {}```"
                            .format(local_time, timezone_code, converted_time))
 
     @commands.command()
-    async def seen(self, *target_users: str):
+    @asyncio.coroutine
+    def seen(self, *target_users: str):
         """Return how long ago supplied user mentions or names have been online.
 
         Keyword arguments:
@@ -183,12 +192,12 @@ class Chat(object):
                                for user_id in logged_users
                                if logged_users[user_id]["name"].lower() == target_user.lower()]
             if found_users == []:
-                await self.bot.say("{} could not be found..."
+                yield from self.bot.say("{} could not be found..."
                                    .format(target_user))
                 return
 
             for found_user in found_users:
-                await self.bot.say("```\n"
+                yield from self.bot.say("```\n"
                                    "┌───────────────────────┐\n"
                                    "├{}{}│\n"
                                    "│             D  H  M  S│\n"

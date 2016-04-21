@@ -22,19 +22,22 @@ class WattpadScraper(GeneralScraper):
         self.bot = bot
 
     @commands.group(name='wattpad', pass_context=True)
-    async def _wattpad(self, ctx):
+    @asyncio.coroutine
+    def _wattpad(self, ctx):
         """Useful commands for getting stories from Wattpad."""
         if ctx.invoked_subcommand is None:
-            await self.bot.pm_help(ctx)
+            yield from self.bot.pm_help(ctx)
 
     @_wattpad.command()
-    async def latest(self):
+    @asyncio.coroutine
+    def latest(self):
         """Get the latest story posted to Wattpad."""
-        result = await self.get_latest_story()
-        await self.bot.say(result)
+        result = yield from self.get_latest_story()
+        yield from self.bot.say(result)
 
-    async def get_latest_story(self, session=None):
-        story_json = await self.fetch_json(
+    @asyncio.coroutine
+    def get_latest_story(self, session=None):
+        story_json = yield from self.fetch_json(
             API_NEWSTORYLIST, session=session, headers={"User-Agent": "Chrome/41.0.2228.0"})
         first_story = story_json['stories'][0]
         story_title = first_story['title']
