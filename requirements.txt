@@ -1,4 +1,4 @@
-aiohttp
+aiohttp==0.17.3
 git+https://github.com/Rapptz/discord.py@async
 chatterbot
 translate
