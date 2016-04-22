@@ -354,7 +354,9 @@ class HiLo_Game(object):
 
 def setup(bot):
     """Called when cog is loaded via load_extension()."""
-    if fileIO.readFile("data/economy.json") is False:
+    try:
+        fileIO.readFile("data/economy.json")
+    except:
         fileIO.writeFile("data/economy.json", {"minimum_balance": 100})
 
     cards = Cards(bot)
