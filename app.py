@@ -7,7 +7,16 @@ import sys
 from io import StringIO
 import asyncio
 
+# description showed when you use the help command
+description = 'test'
 
+# sets up the bots characteristics.
+# command_prefix is the character used before commands
+help_attrs = dict(hidden=True)
+bot = commands.Bot(command_prefix=commands.when_mentioned_or(config.prefix),
+                   description=description,
+                   pm_help=None,
+                   help_attrs=help_attrs)
 
 # Slightly longer method to find cogs recursively in the cogs folder
 def list_cogs():
@@ -180,16 +189,6 @@ def list_cogs_cmd():
     print('Loaded cogs are: ' + ', '.join(list_cogs()))
 
 def start():
-    # description showed when you use the help command
-    description = 'test'
-
-    # sets up the bots characteristics.
-    # command_prefix is the character used before commands
-    help_attrs = dict(hidden=True)
-    bot = commands.Bot(command_prefix=commands.when_mentioned_or(config.prefix),
-                       description=description,
-                       pm_help=None,
-                       help_attrs=help_attrs)
     bot.run(config.email, config.password)
 
 if __name__ == "__main__":
