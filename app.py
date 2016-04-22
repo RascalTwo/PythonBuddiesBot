@@ -53,7 +53,7 @@ def on_ready():
     print('ID: ' + bot.user.id)
     print('------')
 
-    yield from bot.change_status(discord.Game(name="with the Discord API"))
+    yield from bot.change_status(discord.Game(name="with Openshift"))
 
     # this can load the cogs/extensions
     for cog in list_cogs():
