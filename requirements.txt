@@ -1,5 +1,6 @@
 aiohttp==0.17.3
 git+https://github.com/Rapptz/discord.py@async
+git+https://github.com/bear/python-twitter@master
 chatterbot
 translate
 pytz
