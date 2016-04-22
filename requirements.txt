@@ -2,6 +2,5 @@ aiohttp
 git+https://github.com/Rapptz/discord.py@async
 chatterbot
 translate
-wikiquote
 pytz
 tzlocal

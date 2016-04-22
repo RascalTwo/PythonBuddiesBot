@@ -98,7 +98,7 @@ class ComicScraper(GeneralScraper):
                                              "**Image**: {}".format(comic[0],
                                                                     comic[1]))
 
-        @asyncio.coroutine
+    @asyncio.coroutine
     def commitstrip_comic_from_url(self, comic_url):
         """Return comic title and comic image url from comic page url.
 

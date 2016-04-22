@@ -13,11 +13,9 @@ def readFile(filepath):
     dict or bool -- The JSON dictionary if successful, False otherwise.
 
     """
-    try:
-        with open(filepath, encoding="utf-8", mode="r") as reading_file:
-            return json.loads(reading_file.read())
-    except Exception as e:
-        writeFile(filepath, "")
+    with open(filepath, encoding="utf-8", mode="r") as reading_file:
+        return json.loads(reading_file.read())
+
 
 def writeFile(filepath, data):
     """Attempt to write given data as JSON to the given filepath.
