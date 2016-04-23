@@ -16,6 +16,7 @@ import json
 import time
 from .scraper.scraper_utils import GeneralScraper
 import re
+from .queue import Loop
 
 
 class Chat(GeneralScraper):
@@ -27,17 +28,15 @@ class Chat(GeneralScraper):
         self.bot = bot
         self.chatbot = ChatBot("Ron Obvious")
         self.chatbot.train("chatterbot.corpus.english")
-        #self.log_users()
+        Loop(self.log_users, 60)
 
     def log_users(self):
         """Log all online users as online."""
         while True:
-            print("Loop")
             try:
                 data = fileIO.readFile("data/seen.json")
             except Exception as e:
                 data = {}
-            print(data)
             for member in self.bot.get_all_members():
                 if str(member.status) == "offline":
                     continue
@@ -54,7 +53,6 @@ class Chat(GeneralScraper):
                 data[member.id]["last_at_keyboard"] = time.time()
             fileIO.writeFile("data/seen.json", data)
             time.sleep(60)
-            #yield from asyncio.sleep(60)
 
     @commands.command()
     @asyncio.coroutine
@@ -180,43 +178,43 @@ class Chat(GeneralScraper):
         yield from self.bot.say("```Local time : {} \n\n   {}     : {}```"
                            .format(local_time, timezone_code, converted_time))
 
-    # @commands.command()
-    # @asyncio.coroutine
-    # def seen(self, *target_users: str):
-    #     """**NOT WORKING - DON't USE**Return how long ago supplied user mentions or names have been online.
+    @commands.command()
+    @asyncio.coroutine
+    def seen(self, *target_users: str):
+        """Return how long ago supplied user mentions or names have been online.
 
-    #     Keyword arguments:
-    #     usernames -- Names of user to lookup.
+        Keyword arguments:
+        usernames -- Names of user to lookup.
 
-    #     """
-    #     logged_users = fileIO.readFile("data/seen.json")
-    #     for target_user in target_users:
-    #         if "<@" in target_user:
-    #             target_user = target_user.split("<@")[1].split(">")[0]
-    #             if target_user in logged_users:
-    #                 found_users = [logged_users[target_user]]
-    #         else:
-    #             found_users = [logged_users[user_id]
-    #                            for user_id in logged_users
-    #                            if logged_users[user_id]["name"].lower() == target_user.lower()]
-    #         if found_users == []:
-    #             yield from self.bot.say("{} could not be found..."
-    #                                .format(target_user))
-    #             return
+        """
+        logged_users = fileIO.readFile("data/seen.json")
+        for target_user in target_users:
+            if "<@" in target_user:
+                target_user = target_user.split("<@")[1].split(">")[0]
+                if target_user in logged_users:
+                    found_users = [logged_users[target_user]]
+            else:
+                found_users = [logged_users[user_id]
+                               for user_id in logged_users
+                               if logged_users[user_id]["name"].lower() == target_user.lower()]
+            if found_users == []:
+                yield from self.bot.say("{} could not be found..."
+                                   .format(target_user))
+                return
 
-    #         for found_user in found_users:
-    #             yield from self.bot.say("```\n"
-    #                                "┌───────────────────────┐\n"
-    #                                "├{}{}│\n"
-    #                                "│             D  H  M  S│\n"
-    #                                "├Online───────{}│\n"
-    #                                "├At Keyboard──{}│\n"
-    #                                "└───────────────────────┘\n"
-    #                                "```"
-    #                                .format(found_user["name"],
-    #                                        " " * (23 - len(found_user["name"])),
-    #                                        self.get_since(found_user["last_online"]),
-    #                                        self.get_since(found_user["last_at_keyboard"])))
+            for found_user in found_users:
+                yield from self.bot.say("```\n"
+                                   "┌───────────────────────┐\n"
+                                   "├{}{}│\n"
+                                   "│             D  H  M  S│\n"
+                                   "├Online───────{}│\n"
+                                   "├At Keyboard──{}│\n"
+                                   "└───────────────────────┘\n"
+                                   "```"
+                                   .format(found_user["name"],
+                                           " " * (23 - len(found_user["name"])),
+                                           self.get_since(found_user["last_online"]),
+                                           self.get_since(found_user["last_at_keyboard"])))
 
     def get_since(self, since_when):
         """Get time since 'since_when' in days, hours, and minutes.
