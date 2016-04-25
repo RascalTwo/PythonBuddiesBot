@@ -9,25 +9,73 @@ from discord.ext import commands
 playing_users = {}
 
 
-def generate_deck(value_rules, jokers=0, joker_value=0):
-    """Generate a list of unique cards.
+class Cards:
+    """Card cog."""
 
-    Keyword Arguments:
-    jokers -- Number of Jokers to add to Deck. (default 0)
-    joker_value -- Value for each Joker generated. (default 0)
-    value_rules -- Value(int)-Rank(str) dictionary for each Card generated.
-                   (example {1: "Ace"})
+    def __init__(self, bot):
+        """Initalization function."""
+        self.bot = bot
 
-    Returns:
-    list -- List of Cards, each being unique asside from possible Jokers.
+    @commands.group(pass_context=True)
+    async def game(self, ctx):
+        """Base command for playing card games.
 
-    """
-    suits = ["Clubs", "Diamonds", "Hearts", "Spades"]
-    deck = [Card(value_rules, value, suit)
-            for value in value_rules for suit in suits]
-    deck.extend([Card({joker_value: "Joker"}, joker_value, "")
-                 for _ in range(jokers)])
-    return deck
+        Playable games:
+
+        HiLo - game hilo bet_amount
+
+        """
+        if ctx.invoked_subcommand is None:
+            await self.bot.pm_help(ctx)
+
+    @game.command(pass_context=True)
+    async def hilo(self, ctx):
+        """Start a game of HiLo.
+
+        HiLo is a game in which two unique cards are randomly generated. You
+        are then told the value of one of these cards, and must guess if the
+        other value of the other card is either higher, or lower then the value
+        of the first card.
+
+        If you are correct, you win and may either take your money, or go for
+        double or nothing!
+
+        Values from least to greatest:
+            Ace, 2, 3, 4, 5, 6, 7, 8, 9, 10, Jack, Queen, King
+
+        Command: game hilo bet_amount
+        Example: game hilo 10
+
+        ***Economy Is Not Yet Implemented***
+
+        """
+        arguments = ctx.message.content.lower().split(" ")
+        if len(arguments) != 3:
+            await self.bot.say("```Command: game hilo bet_amount\n"
+                               "Example: game hilo 10```")
+            return
+        if not arguments[2].isdecimal():
+            await self.bot.say("```Bet amount needs to be a number.```")
+            return
+#       if False:
+#           await self.bot.say("```You don't have $**{}**!```"
+#                              .format(arguments[2]))
+#           Replace with economy check.
+#           return
+        hilo_game_instance = HiLo_Game(ctx.message.author, arguments[2])
+        await self.bot.say(hilo_game_instance.logic())
+        playing_users[ctx.message.author.id] = hilo_game_instance
+
+    async def receive_message(self, message):
+        """Called whenever any player sends a message."""
+        if (message.author.id == self.bot.user.id or
+                message.author.id not in playing_users):
+            return
+        game = playing_users[message.author.id]
+        if isinstance(game, HiLo_Game):
+            response = game.logic(message)
+            if response is not None:
+                await self.bot.send_message(message.channel, response)
 
 
 class Card:
@@ -112,9 +160,11 @@ class HiLo_Game:
         12: "Queen",
         13: "King"
     }
-    responses = {"start": [None],
-                 "guess": ["higher", "lower"],
-                 "choose": ["double", "pass"]}
+    responses = {
+        "start": [None],
+        "guess": ["higher", "lower"],
+        "choose": ["double", "pass"]
+    }
 
     def __init__(self, user, bet_amount):
         """Create a new HiLo game with the supplied player.
@@ -134,7 +184,7 @@ class HiLo_Game:
     def _new_cards(self):
         self.card_hidden = Card.random(self.value_rules)
         self.card_visible = Card.random(self.value_rules)
-        while self.card_hidden == self.card_visible:
+        while self.card_hidden.value == self.card_visible.value:
             self.card_hidden = Card.random(self.value_rules)
 
     def logic(self, message=None):
@@ -160,7 +210,7 @@ class HiLo_Game:
             return ("So, do you think the face-down card is `higher` or "
                     "`lower` then the **{}**?".format(self.card_visible))
 
-        if self.stage == "guess":
+        elif self.stage == "guess":
             response = ""
             if ((message.content == "higher" and
                  self.card_hidden.value > self.card_visible.value) or
@@ -206,78 +256,29 @@ class HiLo_Game:
             return response
 
 
-class Cards:
-    """Card cog."""
+def generate_deck(value_rules, jokers=0, joker_value=0):
+    """Generate a list of unique cards.
 
-    def __init__(self, bot):
-        """Initalization function."""
-        self.bot = bot
+    Keyword Arguments:
+    jokers -- Number of Jokers to add to Deck. (default 0)
+    joker_value -- Value for each Joker generated. (default 0)
+    value_rules -- Value(int)-Rank(str) dictionary for each Card generated.
+                   (example {1: "Ace"})
 
-    @commands.group(pass_context=True)
-    async def game(self, ctx):
-        """Base command for playing card games.
+    Returns:
+    list -- List of Cards, each being unique asside from possible Jokers.
 
-        Playable games:
-
-        HiLo - game hilo bet_amount
-
-        """
-        if ctx.invoked_subcommand is None:
-            await self.bot.say("Try one of these games:\n"
-                               "HiLo - game hilo bet_amount")
-
-    @game.command(pass_context=True)
-    async def hilo(self, ctx):
-        """Start a game of HiLo.
-
-        HiLo is a game in which two unique cards are randomly generated. You
-        are then told the value of one of these cards, and must guess if the
-        other value of the other card is either higher, or lower then the value
-        of the first card.
-
-        If you are correct, you win and may either take your money, or go for
-        double or nothing!
-
-        Values from least to greatest:
-            Ace, 2, 3, 4, 5, 6, 7, 8, 9, 10, Jack, Queen, King
-
-        Command: game hilo bet_amount
-        Example: game hilo 10
-
-        ***Economy Is Not Yet Implemented***
-
-        """
-        arguments = ctx.message.content.lower().split(" ")
-        if len(arguments) != 3:
-            await self.bot.say("```Command: game hilo bet_amount\n"
-                               "Example: game hilo 10```")
-            return
-        if not arguments[2].isdecimal():
-            await self.bot.say("```Bet amount needs to be a number.```")
-            return
-#       if False:
-#           await self.bot.say("```You don't have $**{}**!```"
-#                              .format(arguments[2]))
-#           Replace with economy check.
-#           return
-        hilo_game_instance = HiLo_Game(ctx.message.author, arguments[2])
-        await self.bot.say(hilo_game_instance.logic())
-        playing_users[ctx.message.author.id] = hilo_game_instance
-
-    async def receive_message(self, message):
-        """Called whenever any player sends a message."""
-        if (message.author.id == self.bot.user.id or
-                message.author.id not in playing_users):
-            return
-        game = playing_users[message.author.id]
-        if isinstance(game, HiLo_Game):
-            response = game.logic(message)
-            if response is not None:
-                await self.bot.send_message(message.channel, response)
+    """
+    suits = ["Clubs", "Diamonds", "Hearts", "Spades"]
+    deck = [Card(value_rules, value, suit)
+            for value in value_rules for suit in suits]
+    deck.extend([Card({joker_value: "Joker"}, joker_value, "")
+                 for _ in range(jokers)])
+    return deck
 
 
 def setup(bot):
     """Called when cog is loaded via load_extension()."""
     cards = Cards(bot)
-    bot.add_listener(cards.receive_message, "on_message")
+    bot.add_listener(cards.on_receive_message, "on_message")
     bot.add_cog(cards)
