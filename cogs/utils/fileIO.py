@@ -3,7 +3,7 @@
 import json
 
 
-def readFile(filepath):
+def read_file(filepath):
     """Attempt to read a JSON file from the given filepath, may raise exception.
 
     Keyword Arguments:
@@ -17,7 +17,7 @@ def readFile(filepath):
         return json.loads(reading_file.read())
 
 
-def writeFile(filepath, data):
+def write_file(filepath, data):
     """Attempt to write given data as JSON to the given filepath.
 
     Keyword Arguments:

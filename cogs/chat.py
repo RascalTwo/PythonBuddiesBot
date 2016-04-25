@@ -5,9 +5,9 @@ Contains many all chat-related commands.
 """
 import random
 from datetime import datetime
+from discord.ext import commands
 from pytz import timezone
 from tzlocal import get_localzone
-from discord.ext import commands
 from chatterbot import ChatBot
 from translate import Translator
 import wikiquote
@@ -24,7 +24,7 @@ class Chat(object):
 
     @commands.command()
     async def say(self, *text):
-        """Echos what you say.
+        """Echo what you say.
 
         Keyword arguments:
         *text -- Text to echo
@@ -34,7 +34,7 @@ class Chat(object):
 
     @commands.command()
     async def ping(self):
-        """Says 'Pong'.
+        """Say 'Pong'.
 
         Keyword arguments:
         None
@@ -44,7 +44,7 @@ class Chat(object):
 
     @commands.command()
     async def decide(self, *options):
-        """Decides between multiple options
+        """Decide between multiple options.
 
         **Use double quotes for each option**
 
@@ -59,7 +59,7 @@ class Chat(object):
 
     @commands.command()
     async def translate(self, language, *text):
-        """Translates text from English to specified language
+        """Translate text from English to specified language.
 
         **Use double quotes for each option**
 
@@ -71,9 +71,7 @@ class Chat(object):
         text -- Text to translate.
 
         """
-        text_to_string = ''.join(text)
-        translator = Translator(to_lang=language)
-        translation = translator.translate(text_to_string)
+        translation = Translator(to_lang=language).translate(' '.join(text))
 
         await self.bot.say(translation)
 
@@ -105,17 +103,16 @@ class Chat(object):
         choice -- either 'QOTD' (Quote of the day) or 'R' (Random)
 
         """
-
         if choice.upper() == 'QOTD':
             quote = wikiquote.quote_of_the_day()
             await self.bot.say("'{}' -- {}".format(quote[0], quote[1]))
         elif choice.upper() == 'R':
             while True:
-                authors = wikiquote.random_titles(max_titles=5)
-                random_author = random.choice(authors)
-                if random_author.isdigit():
+                pages = wikiquote.random_titles(max_titles=5)
+                random_page = random.choice(pages)
+                if random_page.isdigit():
                     continue
-                random_quote = random.choice(wikiquote.quotes(random_author))
+                random_quote = random.choice(wikiquote.quotes(random_page))
                 await self.bot.say("'{}' -- {}"
                                    .format(random_quote,
                                            random_author))
