@@ -195,7 +195,7 @@ if __name__ == "__main__":
     while True:
         try:
             start()
-        except Exception, e:
+        except Exception as e:
             print e
             print e.__name__
             print "Something went wrong..."
