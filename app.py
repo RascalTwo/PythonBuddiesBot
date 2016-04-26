@@ -196,6 +196,6 @@ if __name__ == "__main__":
         try:
             start()
         except Exception as e:
-            print e
-            print e.__name__
-            print "Something went wrong..."
+            print(e)
+            print(e.__name__)
+            print("Something went wrong...")
