@@ -192,4 +192,10 @@ def start():
     bot.run(config.email, config.password)
 
 if __name__ == "__main__":
-    start()
+    while True:
+        try:
+            start()
+        except Exception, e:
+            print e
+            print e.__name__
+            print "Something went wrong..."
